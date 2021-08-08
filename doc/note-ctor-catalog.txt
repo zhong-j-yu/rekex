@@ -1,0 +1,104 @@
+
+We want to express a production rule
+    A -> B C
+in Java, with Java types of A,B,C,
+along with a code that constructs A from (B,C)
+
+The most economical way is the record type
+
+    record A(B b, C c){}
+
+For more flexibility, one more more @Ctor methods can
+be defined in the body of A.
+
+    record A(B b) // don't store C
+    {
+        @Ctor public static
+        A ctor(B b, C c){ return new A(b); }
+    }
+
+The long prefix `@Ctor public static` is annoying, but not by too much.
+
+--
+
+Ctors can be moved out to a central Ctor Catalog class
+
+    public static class CtorCatalog
+    {
+        @Ctor public static
+        A a(B b, C c){ return new A(b); }
+
+        ... // others
+    }
+
+This may be because we do not want to, or cannot,
+pollute AST types with syntax rules.
+
+Another great reason is that all syntax rules are listed
+in one place, so the grammar is defined in a single place.
+
+We only look for ctor methods directly declared in the class,
+not those inherited. It is difficult to define order
+of methods from multiple classes.
+
+--
+
+Now, the long prefix `@Ctor public static` before every method in CtorCatalog
+becomes even more distracting. Can we somehow omit them? Like,
+
+    class CtorCatalog
+    {
+        A a(B b, C c){ return new A(b); }
+
+        ... // others
+    }
+
+All non-private instance methods declared in the class are candidate ctors.
+Again, no inheritance.
+Use ordinary class; don't use `record` etc which may silently introduce instance methods.
+
+We'll generate the parser code in the same package as the catalog class,
+to access those package-accessible methods.
+An instance of the class must be provided to PegParserBuilder,
+or to the constructor of the generated parser code.
+Different instances may have different behaviors in the ctors.
+
+The first problem is that, builder.parser() loads the parser class
+in its own class loader, preventing it from accessing those methods in CtorCatalog.
+https://docs.oracle.com/javase/specs/jvms/se16/html/jvms-5.html#jvms-5.4.4
+Two classes are not in the same runtime package if loaded from different class loaders.
+
+User may declare these methods in an interface, so that they are implicitly public.
+However there's no line numbers for bodiless methods, so we can't order them implicitly.
+(default methods have bodies; but then the `default` prefix defeats the point)
+Subclass needs to prefix these methods with `@Override public`, no good either
+to use subclass as the catalog class.
+
+Solution 1: require that these methods are public.
+            a small nuisance, maybe. but if 1 word is fine, what's so wrong with 2?
+            (implicit public methods in an interface with `@Ctor static`)
+
+Solution 2: use builder only to generate the code, into the main src dir.
+            invoke the parser constructor in production runs.
+            two steps needed whenever grammar is changed.
+            Not very friendly for development, especially for new users.
+
+Solution 3: compile the class into the classpath of the application,
+            use the same class loader to load the parser class.
+            hackish, acceptable for development. not reliable.
+
+Solution 4: parser code generated at compile phase (annotation processing)
+            to be investigated. right now, not worth it just to fix this problem.
+
+Solution 4: change the methods to public at class loading time with agent
+            https://docs.oracle.com/javase/8/docs/api/java/lang/instrument/ClassFileTransformer.html
+
+--
+
+Current decision:
+
+Keep `@Ctor public static` as ctor marker in catalog.
+Not too big a deal.
+Might be nice to see explicit `@Ctor` markers.
+Simpler. Consistent with ctors in datatypes.
+`public` can be omitted on interface static methods.

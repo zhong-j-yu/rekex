@@ -1,0 +1,57 @@
+
+# code gen
+
+        FooModel --> FooCodeGen --> Foo.java
+                         |
+                      FooMaker           <--.
+                                            |
+  FooTemplate --> TemplateToMaker --> FooMaker.java
+
+A FooCodeGen takes in a FooModel, outputs a Foo.java.
+FooCodeGen internally depends on a FooMaker,
+which contains methods that each takes some parameters
+to produce some piece of Java code.
+Based on input FooModel, FooCodeGen invokes these
+methods in certain order with certain parameters
+to linearly build up the Foo.java file.
+
+Now, FooMaker methods mainly do concatenations of
+string literals and input parameters; so it can be generated from
+a template file FooTemplate. The template file looks somewhat like the
+eventual Foo.java. Each segment of the template file corresponds
+to a method in FooMaker.
+
+FooTemplate:
+
+    //** template declIntVar(name, value`1234`)
+    int name=1234;
+
+FooMaker:
+
+    void declIntVar(Object name, Object value){
+        concat("int ", name, "=", value, ";")
+
+FooCodeGen:
+
+    var maker = new FooMaker();
+    ...
+    maker.declIntVar("foo", 13);
+    ...
+    maker.writeTo(file("Foo.java"))
+
+Foo.java
+
+    int foo=13;
+
+
+# Maker
+
+TemplateToMaker itself is a code gen class that
+outputs a Java file. Following the same strategy,
+it internally depends on MakerMaker, which
+is generated from MakerTemplate by TemplateToMaker.
+See MakerTemplate.main()
+
+MakerTemplate --> TemplateToMaker --> MakerMaker.java
+                         |                   |
+                   MakerMaker             <--'

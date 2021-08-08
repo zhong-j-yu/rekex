@@ -1,0 +1,3 @@
+Tests are written not in *this* package;
+to make sure access checking is done correctly.
+Just like user codes are not written in this package.

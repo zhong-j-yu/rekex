@@ -1,0 +1,40 @@
+
+# modules of rekex
+
+rekex-common_util
+    some basic utils used by many modules
+
+rekex-regexp
+    RegExp and RegExpApi
+
+rekex-grammar
+    spec
+        basic annotations and types for Rekex Spec
+    helper
+        more annotations and types that can be used to define grammars
+    annotype
+        AnnoType - representation of annotated types
+    annomacro
+        AnnoMacro
+    grammar
+        GrammarRule, GrammarBuilder, and Grammar
+            build grammars from user datatypes
+
+rekex-parser
+    build parsers from Grammars
+
+rekex-example
+    examples of rekex-regexp
+    examples of rekex-parser
+
+
+## comments ------
+
+`rekex-grammar` could be split into even smaller modules; not worth it for now.
+
+Types in `helper` don't require special handling by grammar and parser builders;
+  they conform to the spec therefore they are handled transparently.
+  For now, put it under rekex-grammar to avoid having too many modules.
+  Also, it's possible that in future versions grammar and parser builders
+  do optimize for those helper types with special handlings.
+

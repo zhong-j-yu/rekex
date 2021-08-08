@@ -1,0 +1,49 @@
+
+high surrogate: U+D800 to U+DBFF
+low  surrogate: U+DC00 to U+DFFF
+surrogate pair: a high surrogate followed by a low surrogate,
+                representing U+010000 to U+10FFFF
+lone surrogate: a high surrogate not followed by a low surrogate,
+                or a low surrogate not preceded by a high surrogate.
+                it does not represent a unicode character.
+
+Surrogate pairs are used in UTF-16; a lone surrogate in UTF-16 is invalid.
+Now should a surrogate code point exist in input/output of UTF-8/32 encoder/decoders.
+Unicode characters range from 0 to 10FFFF, minus the range from D800 to DFFF.
+
+However, there is a great deal of tolerance of lone surrogates in various
+Java APIs. Typically a surrogate pair is transformed to one valid character;
+and a lone surrogate is also allowed as a code point of its own value.
+
+In Java regex package, matcher apparently will convert input chars
+into code points, tolerating lone surrogates. The code point sequence
+will not contain a surrogate pair. Matching is done on code point level,
+not char level.
+
+The regex format also tolerates lone surrogates, e.g.
+"\uD800", "\\uD800", "\\x{D800}", and they could match
+lone surrogates in inputs.
+
+Surrogate pairs like "\uD800\uDC00", "\\uD800\\uDC00" in regex
+are transformed into an atomic character; they will not match
+lone surrogates in inputs.
+
+However, "\\x{D800}\\x{DC00}" is interpreted as two separate
+code points; it could mean union or sequence, depending on context.
+As a union it could match lone surrogates in inputs.
+As a sequence, no, because inputs cannot have such sequences.
+
+In our RegExp, we reject lone surrogates as Single or ends of Range.
+Otherwise, we could construct a regex with a surrogate pair
+from previously two separate constructs. We might be able to avoid that
+by exploiting the \\x{} escape, but that's not a documented behavior.
+
+A range can still range over the surrogate region, e.g. [\u0000-\uFFFF],
+which could match a lone surrogate in the input. Inputs should be
+sanitized by clients to make sure there's no lone surrogates.
+
+The Json grammar references a range of 0020-10FFFF. It's unclear
+how it matches lone surrogates. Presumably they don't exist in inputs.
+
+If a user attempts to use Java regex to match inputs as arbitrary 16-bit integers,
+not as unicode characters, he's out of luck.
