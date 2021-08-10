@@ -146,8 +146,8 @@ class ExampleRegExp_UserGuide
 
         // flag
 
-        var bool_ci = flag(true, Pattern.CASE_INSENSITIVE, bool);
-        var bool_ci2 = ignoreCase(bool);
+        var abc_ci = flag(true, Pattern.CASE_INSENSITIVE, abc);
+        var abc_ci2 = ignoreCase(abc);
 
 
         // opaque

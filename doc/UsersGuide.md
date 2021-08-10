@@ -236,12 +236,12 @@ Assuming `JsonChar` is a datatype that matches a logical Json character,
 which could be a single input char or an escape sequence.
 A Json string contains zero or more logical characters enclosed in quotes.
 
-    record JsonString(Quote qL, List<JsonChar> chars, Quote qR) implements JsonValue{}
+    record JsonString(Quote qL, List<JsonChar> chars, Quote qR) implements JsonPrimitive{}
 
-Note - Repetition rules could be encoded as alternation and concatenation rules, e.g. 
-`Foos = Foo Foos | ε` . 
-Some grammar authors prefer this approach; and you can do the same in Rekex as well. 
-Nevertheless, Rekex natively supports repetition rules because they are so common. 
+> Note - Repetition rules could be encoded as alternation and concatenation rules, e.g. 
+  <br> `Foos = Foo Foos | ε` . <br> 
+  Some grammar authors prefer this approach; and you can do the same in Rekex as well. 
+  Nevertheless, Rekex natively supports repetition rules because they are very common in grammars. 
 
 You can specify a quantifier for the repetition with `@SizeLimit(min,max)`, or equivalently, with
 `@AtLeast(n)`, `@AtMost(n)`, `Size(n)`.
@@ -249,14 +249,14 @@ You can specify a quantifier for the repetition with `@SizeLimit(min,max)`, or e
         @AtLeast(1) List<Foo> foo
 
 This is an example of "annotated type", which further constrains allowed values.
-The annotation applies to the type `List<Foo>`, not to the parameter `foo`. 
-See [JLS-9.7.4](https://docs.oracle.com/javase/specs/jls/se16/html/jls-9.html#jls-9.7.4). 
-More complicated datatypes can be constructed for example
+The annotation applies to the type `List<Foo>`, not to the parameter `foo`, 
+see [JLS-9.7.4](https://docs.oracle.com/javase/specs/jls/se16/html/jls-9.html#jls-9.7.4). 
+More complex annotated types can be constructed for example
 
         List< @AtMost(3)List<Foo> >
 
-The grammar rule for this datatype is a repetition rule of zero or more `X`,
-where `X` is a repetition rule of `Foo` not more than 3 times.
+This means a repetition of 0 or more `X`,
+where `X` is a repetition of `Foo` 0 to 3 times.
 
 Annotations on array types are somewhat strange, 
 see [JLS-9.7.4](https://docs.oracle.com/javase/specs/jls/se16/html/jls-9.html#jls-9.7.4).
@@ -284,10 +284,10 @@ We need a negative lookahead at the position after `B` to exclude `C1`.
 
     record A(B b, Not<C1> nc1, C c){}
 
-`Not<C1>` may confuse a casual observer though, 
-as if `nc1` could be one of the many values outside type `C1`.
-You may instead use the equivalent form `Peek<Not<C1>>` 
-which expresses more verbally that it is a negative lookahead. 
+> `Not<C1>` may confuse a casual observer though, 
+  as if `nc1` could be one of the many values outside type `C1`.
+  You may instead use the equivalent form `Peek<Not<C1>>` 
+  which expresses more verbally that it is a negative lookahead. 
 
 ## Generic Datatypes - `Either<A,B>`, `Opt<E>`, etc.
                           
@@ -313,6 +313,7 @@ The helper datatypes include
 - `Opt<E>` - optionally matches E, i.e. `E?`
 - `OneOrMore<E>` - maches E one or more times, i.e. `E+`
 - `SepBy<T,S>` - zero or more `T`, separated by `S`, i.e. `(T (S T)*)?`
+- `SepBy1<T,S>` - one or more `T`, separated by `S`, i.e. `T (S T)*`
 
 For example, a Json array contains zero or more values separated by comma `","`
 which can be expressed as `SepBy<JsonValue,Comma>`
@@ -322,7 +323,6 @@ which can be expressed as `SepBy<JsonValue,Comma>`
     ) implements JsonValue{}
 
 `JsonObject` is similar with `SepBy<Member,Comma>` .
-Use `SepBy1<T,S>` if at least one `T` is expected.
 
 
 ## Tokenizer with @Regex
@@ -381,12 +381,12 @@ You can apply @Regex or equivalent on values of an `enum` type;
 the enum type corresponds to an alternation rule
 with one subrule for each value, in their declaration order.
 
-    enum JsonBool implements JsonValue
+    enum JsonBool implements JsonPrimitive
     {
         @Str("true") TRUE,
         @Str("false") FALSE,
     }
-    enum JsonNull implements JsonValue
+    enum JsonNull implements JsonPrimitive
     {
         @Str("null") NULL
     }
@@ -450,7 +450,7 @@ followed by zero or more chars in `wsChars`.
 Next, review all existing tokenizers; if trailing whitespaces are allowed after a token, 
 use `@Token` instead of `@Ch` or `@Str`.
 
-    enum JsonBool implements JsonValue
+    enum JsonBool implements JsonPrimitive
     {
         @Token("true") TRUE,
         @Token("false") FALSE,
@@ -458,7 +458,7 @@ use `@Token` instead of `@Ch` or `@Str`.
 
     enum Comma{ @Token(",")I }
 
-    record JsonArray( @Token("[")char bL, ... ){}
+    record JsonArray( @Token("[")char bL, ... ) ...
 
 Be careful though. For example, the beginning quote of a Json string cannot be a `@Token`,
 because whitespaces after the quote are characters in the string, not to be ignored.
@@ -477,9 +477,9 @@ Define a datatype for optional whitespaces and insert it wherever it's allowed.
 
 ## PegParser
 
-Once the datatypes are defined, we can create a parser for the root type
+Once the datatypes are defined, we can create a parser for the *root type*
 
-    PegParser<JsonValue> parser = PegParser.of(JsonValue.class);
+    PegParser<JsonInput> parser = PegParser.of(JsonInput.class);
 
 The root type can be any datatype. For example, if inputs are expected 
 to be always Json objects
@@ -492,20 +492,20 @@ We can unit test our grammar piece by piece this way.
 `PegParser.of(rootType)` will generate and compile a Java source file 
 under the `/tmp` directory. 
 
-For more options, use `PegParserBuilder`
+For more options of how a parser is built, use `PegParserBuilder`
 
     var builder = new PegParserBuilder()
         .rootType(JsonValue.class)
         .packageName("com.example")
         .className("MyJsonParser")
-        .outDirForJava(Paths.get("/src/main/java");
-        
+        .outDirForJava(Paths.get("src/main/java"));
+
     PegParser<JsonValue> parser = builder.parser();
 
 We can print a text version of the grammar for inspection
 
     var grammar = builder.grammar();
-    out.println( grammar.toText() );
+    System.out.println( grammar.toText() );
 
 The generated Java source file can be placed in our main src directory
 so that we can instantiate the parser directly.
@@ -521,7 +521,7 @@ so don't refrain from creating new instances on demand.
 To invoke a parser against an input
 
     ParseResult<Foo> result = parser.parse(input); // or parse(input, start, end)
-    out.println(result);
+    System.out.println(result);
 
 In the current version of Rekex, only `CharSequence` inputs are supported.
 
@@ -553,8 +553,8 @@ There are 4 types of results: `Full, Partial, Fail, Fatal`
   and its datatype. The stack can be investigated to create a better error message.
   ```
         if(result instanceof ParseResult.Fail<?> fail){
-            out.println(fail.message()+" at "+fail.position());
-            out.println(fail.stack().get(0));
+            System.out.println(fail.message()+" at "+fail.position());
+            System.out.println(fail.stack().get(0));
         }
   ```
   
@@ -570,6 +570,9 @@ There are 4 types of results: `Full, Partial, Fail, Fatal`
 
 Positions in the input can be translated into line and column numbers by `LineCounter`.
 
+        var lc = new LineCounter(input);
+        System.out.printf("line=%d, col=%d", lc.line(position), lc.column(position));
+
 ## Ctor Catalog
 
 In previous examples, ctors of a datatype are declared in the body of the datatype.
@@ -583,12 +586,12 @@ so that it's easier to review the grammar.
         @Ctor public static   FooA fooA(...){...}
         @Ctor public static   FooB fooB(...){...}
 
-        @Ctor public static   Bar bar(...){...}
+        @Ctor public static   Bar bar(List<Foo> foos){...}
         ...
     }
 
-    PegParser<Foo> = new PegParserBuilder()
-        .rootType(Foo.class)
+    PegParser<Bar> parser = new PegParserBuilder()
+        .rootType(Bar.class)
         .ctorCatalog(CtorCatalog.class)
         .parser();
 
@@ -616,4 +619,4 @@ Please use the [Issue Tracker](https://github.com/zhong-j-yu/rekex/issues).
 
 ----
 <sub>Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a job; helps appreciated.</sub>
+I am looking for a Java job; helps appreciated.</sub>

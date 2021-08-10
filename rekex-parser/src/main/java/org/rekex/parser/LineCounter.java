@@ -58,7 +58,7 @@ public class LineCounter
 
     /**
      * The line number for the position.
-     * The number for the first line is `1`.
+     * The number for the first line is `0`.
      */
     public int line(int pos)
     {
@@ -72,7 +72,7 @@ public class LineCounter
 
     /**
      * The column number for the position within the line.
-     * The number for the first column is `1`.
+     * The number for the first column is `0`.
      */
     public int column(int pos)
     {

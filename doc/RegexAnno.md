@@ -17,7 +17,7 @@ the regular expression matches and consumes any input with literal `"true"`
 followed by zero or more whitespaces; however the `String` will only contain `"true"`.
 
 Other annotations can be used in place of `@Regex` if they are convertible to `@Regex`
-through AnnoMacro. 
+through [AnnoMacro](./AnnoMacro.md). 
 
 `@org.rekex.helper.anno.Ch` -- to match a single code point,
 if it's contained in a set defined by union of `Ch.value` and `Ch.range` minus `Ch.except`.

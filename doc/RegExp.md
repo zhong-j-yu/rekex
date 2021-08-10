@@ -1,12 +1,12 @@
 
 # RegExp - structured regular expression
 
-Regular expression (regex) got a bad reputation because of its typical compact
-representation which reads like an alphabet soup, obfuscating
-the structure within. It is also quite difficult to compose a complex regex by hand.
+Regular expression (regex) has got a bad reputation because of its typical compact
+representation, which is an alphabet soup obfuscating the internal structure. 
+It is also quite difficult to compose a complex regex by hand.
 
-The RegExp library solves this problem by providing factory methods like `seq(...), alt(...)`
-to construct a regular expression as a tree.
+The *RegExp* library solves this problem by providing factory methods like `seq(...), alt(...)`
+to construct regular expressions as trees of subexpressions.
 The construction code will be long and wordy, by design,
 so that the structure is understandable at first glance.
 
@@ -17,7 +17,7 @@ with `.mmm` for milliseconds.
         var HH = alt(
             seq(alt('0','1'), digit),  // 00-19
             seq('2', ch("0123")),      // 20-23
-            "24"                       // 24, sake of example
+            "24"                       // 24, for the sake of example
         );
         var MM = seq(range('0', '5'), digit); // 00-59
         var SS = MM;
@@ -25,8 +25,8 @@ with `.mmm` for milliseconds.
 
         var time = seq(HH, ":", MM, ":", SS, opt(".", mmm));
 
-This will create a tree of subexpressions, but we don't need to care about that.
-All we want is to obtain the regex in its typical string representation
+Usually we just want to get the string representation of the regex
+to interoperate with other software components
 
         time = simplify(time);
 
@@ -34,11 +34,8 @@ All we want is to obtain the regex in its typical string representation
         
         "(?:[01][0-9]|2[0123]|24):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{3})?"
 
-All factory methods are static methods from 
-[RegExpApi](../rekex-regexp/src/main/java/org/rekex/regexp/RegExpApi.java); 
-they can be accessed by 
-
-    import static rekex.regexp.RegExpApi.*;
+See more examples [here](../rekex-example/src/main/java/org/rekex/exmple/regexp).
+Yes, there is the infamous regex for email address.
 
 RegExp fully conforms to 
 [java.util.regex.Pattern](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html),
@@ -53,31 +50,45 @@ but can be used standalone as
             <version>1.0.0</version>
         </dependency>
 
+All factory methods are static methods from
+[RegExpApi](../rekex-regexp/src/main/java/org/rekex/regexp/RegExpApi.java),
+which can be accessed by
 
+    import static rekex.regexp.RegExpApi.*;
+
+
+## argument types
+
+The datatypes we use to represent regular expressions are 
+[RegExp](../rekex-regexp/src/main/java/org/rekex/regexp/RegExp.java) and its subtypes.
+Most factory methods expect arguments of `RexExp`. For convenience, we also allow
+arguments of characters and strings, which are automatically converted to `RegExp`
+
+- `char`, `int` - as a single character
+- `String` - as a sequence of characters
+
+We use `Object` as the static types of the arguments to cover all of these types. 
 
 ## character
 
 In this document, "character" refers to unicode characters, ranging from U+0000 to U+10FFFF.
-Lone surrogates, i.e. code points in 0xD800 - 0xDFFF, should not appear alone,
-either in regex or in input, as the behavior isn't well defined.
-`java.lang.String` will be interpreted as an `int[]` of characters, not as `char[]`.
-
-The factory methods accept `char` and `int` arguments representing single characters.
 
         var CR = '\r';   // char
         var LF = 0x0A;   // int
 
-        var CRLF = seq(CR, LF);
+`String` will be interpreted as an `int[]` of characters, not as a `char[]`.
+
+Lone surrogates, i.e. code points in D800-DFFF, should not appear alone,
+either in regex or in input, since the behavior [isn't well-defined](./note-regex-unicode.txt).
 
 
 ## seq(...)
 
-`seq(r1, r2, ...)` concatenates subexpressions
+`seq(e1, e2, ...)` concatenates subexpressions
 
         var CRLF = seq(CR, LF);
 
-A `String` is interpreted as a `seq` of characters
-by almost all factory methods (except in `ch(String)`).
+`String` arguments are interpreted as `seq` of characters
 
         var TRUE = seq("true"); // equivalent to seq('t', 'r', 'u', 'e')
 
@@ -91,7 +102,7 @@ by almost all factory methods (except in `ch(String)`).
 
 ## alt(...)
 
-`alt(r1, r2, ...)` means `r1 or r2 or ...`
+`alt(e1, e2, ...)` means `e1 or e2 or ...`
 
         var bool = alt(
             TRUE,
@@ -104,19 +115,21 @@ by almost all factory methods (except in `ch(String)`).
             'c'
         );
 
-`ch(String)` is interpreted as `alt` of characters in the string
+`ch(String)` is equivalent to `alt` of characters in the string
 
         var abc_ = ch("abc"); // alt('a','b','c')
 
-`range(x, y)` has the effect of `alt(x, x+1, ..., y)`
+`range(x, y)` is equivalent to `alt(x, x+1, ..., y)`
 
         var digit = range('0', '9');
 
-Use `except(...)` to exclude some characters; explained in detail later in "Character Class"
+Use `except` to exclude some characters from a set of characters, 
 
         var ab_1_9 = alt(abc, digit).except('c', '0');
 
-Sometimes `ε` is used as the last clause of an `alt`
+> `except` only works with Character Classes, which is explained later.
+
+It's common to see `ε` as the last clause of an `alt`
 
         var opt_bool = alt(
             "true",
@@ -133,8 +146,8 @@ Sometimes `ε` is used as the last clause of an `alt`
             (enable24 ? "24" : alt())  // disabled
         );
 
-`alt(r1)` is just `r1` itself; it can be used stylishly,
-for example, to uniformly present all grammar terms in alt form.
+`alt(e1)` is just `e1` itself.
+It may be used stylishly to present all terms in a uniform fashion
 
         var PLUS = alt(
             '+'
@@ -150,45 +163,49 @@ for example, to uniformly present all grammar terms in alt form.
 
 ## quantifiers
 
+For `e?`, `e*`, `e+`
+
         var opt_sign = opt(sign);  // optional
+
         var digits0 = rep0(digit); // 0 or more digits
+
         var digits1 = rep1(digit); // 1 or more digits
 
 If there are more than one arguments to these methods,
 they are interpreted as a sequence, e.g.
-`opt(r1, r2)` means `opt(seq(r1, r2))`
+`opt(e1, e2)` is equivalent to `opt(seq(e1, e2))`
 
-        var t2 = seq(digit, opt(sign, digit)); 
+        var t2 = seq(digit, opt(sign, digit)); // matches "1", "1+2", etc. 
 
-To quantify repetitions with min/max
+To quantify repetitions with `min` and `max`
 
         var d4     = times(4, digit);     // 4 digits
         var d4_8   = times(4, 8, digit);  // 4 to 8 digits
-        var d4_INF = times(4, Long.MAX_VALUE, digit); // 4 or more
+        var d4_INF = times(4, Long.MAX_VALUE, digit); // 4 to infinity
 
-To change *greediness* to *reluctant* or *possessive*
+To be *reluctant* or *possessive*
 
         var rd = reluctant(digits0);
         var pd = possessive(digits0);
 
 
-## group and reference
+## capturing group, back-reference
 
-A part of a regex can be grouped (by capturing group),
+A subexpression can be enclosed in a *capturing group*,
 so that it can be referenced later, by 
 [Matcher](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Matcher.html), 
-or by back-reference.
-
-- **named group** can be referenced by its name
-
-        var g1 = group("g1", HH);
-        var ref1  = backRef("g1");
-        var ref1_ = backRef(g1);
+or by back-references.
 
 - **unnamed group** can be referenced by its group number
 
         var g2 = group(MM);
         var ref2 = backRef(2); 
+
+- **named group** can be referenced by its name (and its group number)
+
+        var g1 = group("g1", HH);
+        var ref1  = backRef("g1");
+        var ref1_ = backRef(g1);
 
 The group number of a group (unnamed or named) within a regex can be found by
 
@@ -200,17 +217,17 @@ The group number of a group (unnamed or named) within a regex can be found by
 Note that `ref2` cannot depend on `g2_num`, 
 because that would've caused a circular dependency of
 `ref2 -> g2_num -> exp2 -> ref2`.
-You may count the group number yourself for `ref2`,
-and write a unittest to assert that it's the same as `g2_num`. 
-
-Or you should just prefer named groups and named references
-which are much simpler and clearer. 
+You may count the group number for `ref2` by eyeballing,
+then write a unittest to assert that it's the same as `g2_num`. 
+Or, if you can, stick to named groups and named references. 
 
 
 ## atomic group 
 
-An atomic group in regex prevents backtracking.
-In the javadoc, it's referred to as `an independent, non-capturing group`
+A regex atomic group prevents backtracking.
+In the javadoc of
+[Pattern](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html),
+it's referred to as `an independent, non-capturing group`
 
         var digits_all = atomicGroup(rep0(digit));
 
@@ -219,11 +236,12 @@ In the javadoc, it's referred to as `an independent, non-capturing group`
 ## lookahead, lookbehind, boundary
 
 `lookahead(boolean, exp)`, `lookbehind(boolean, exp)`
-constructs a positive/negative lookahead/lookbehind of `exp`.
+constructs a positive/negative lookahead/lookbehind
 
-        var notLedByZero = lookahead(false, seq("0", digit));
+        var notLedByZero = lookahead(false, seq("0", digit)); // negative lookahead
+
         var number = seq(notLedByZero, rep1(digit));
-        // does not match if "0" is followed by more digits
+        // does not match "01"
 
 Use `boundary_xxx()` methods for predefined boundary matchers 
 
@@ -232,34 +250,36 @@ Use `boundary_xxx()` methods for predefined boundary matchers
 
 
 ## flags
-To turn on/off 
-[flags](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html#flags()) 
-on a regex
+To turn on/off the 
+[flags](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html#flags()), 
+use `flag(boolean, flags, exp)`
 
-        var bool_ci = flag(true, Pattern.CASE_INSENSITIVE, bool);
+        var abc_ci = flag(true, Pattern.CASE_INSENSITIVE, abc);
+ 
+For the flag 
+[CASE_INSENSITIVE](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html#CASE_INSENSITIVE) 
+there is a convenience method `ignoreCase(exp)`
 
-There's a convenience method `ignoreCase(exp)` to turn on `CASE_INSENSITIVE`
-
-        var bool_ci2 = ignoreCase(bool);
+        var abc_ci2 = ignoreCase(abc);
 
 
 
 
-## to regex
+## toRegex
 
-After you've constructed the root expression,
-it's time to convert it to the usual regex format.
+After we have constructed the root expression,
+it's time to convert it to the typical string representation.
 
         String regex = toRegex(exp);
 
-You can visually inspect the tree structure by
-
-        System.out.println( toTreeText(exp) );
-
-You can try `simplify` which may produce a shorter and nicer regex;
+We could try `simplify` first which may produce a shorter and nicer regex;
 but don't expect it to be too smart.
 
         exp = simplify(exp);
+
+For diagnosis, the structure of the tree can be displayed visually by
+
+        System.out.println( toTreeText(exp) );
 
 
 
@@ -270,85 +290,124 @@ but don't expect it to be too smart.
 You can quote a regex as is, if we don't have a factory method for it
 
         var unicode_linebreak = opaque("\\R");
+   
+If you know the specific kind of the regex, use the more specific
+methods `boundary` and `predefined`
 
-For boundaries,
+- for boundaries,
 
         var unicode_cluster_boundary = boundary("\\b{g}");
 
-For predefined character classes (see later)
+- for predefined character classes
 
         var wordChar = predefined("\\w");
         var UPPER = predefined("\\p{Upper}");
         var beta = predefined("\\N{GREEK SMALL LETTER BETA}");
 
+  > A predefined character classe is a shorthand notation for a set of characters, 
+  > making it a little easier to write a regex by hand.
+  > But with RegExp, you probably should avoid them; instead, defined
+  > the set of characters explicitly, e.g. `var UPPER = range('A', 'Z');`
+
 
 
 ## Character Class
 
-So far, we have not talked about "character classes".
-It is an important construct for implementations of regex, 
-but it's not an essential concept of regular expression.
-If you use RegExp, you'll rarely need to think about character classes.
-But here it goes.
+You do not need to worry about *character classes*,
+except if you are using the `except()` method.
 
-A character class is nothing but a set of characters.
-As a regex, a character class matches a single character if it's in the set.
-Therefore, it is equivalent to an `alt` of characters.
-More complex character classes can be constructed by set union/intersection/negation.
+> Character class is not an essential concept in regular expression,
+> even though it *is* an important, basic building block
+> for *implementations* of regex.
 
-Character classes include:
+A character class is a regular expression that corresponds to a *set* of characters;
+it matches a single input character if and only if 
+the set contains the character.
+Set union/intersection/negation operations are supported on character classes.
 
-- A single character is a character class of itself.
+The method `s0.except(s1,s2,...)` is equivalent to 
+`intersect(s0, negate(union(s1,s2...)))`,
+where `s0, s1, s2, ...` are required to be 
+*convertible to character classes* 
 
-- A predefined character class is a predefined set of characters.
-  >Avoid using predefined character classes;
-  >they are shorthand notations to ease writing regex by hand. 
-  >Instead, explicitly and clearly define the set of characters in your code.
+The following expressions are convertible to character classes
+(assuming `s0, s1, s2, ...` are as well)
 
-- Union of character classes
+- a single character, which is a character class of itself.
+
+- a predefined character class
+  
+- `seq(s1)`, which is equivalent to `s1`
+
+- `alt(s1,s2,...)`, which is equivalent to `union(s1,s2,...)`
+
+- `union(s1,s2,...)`
 
         var xyz = union('x', 'y', 'z');
                                      
-  `union(args)` is equivalent to `alt(args)`  
+  `union(args)` can always be expressed as `alt(args)` instead  
 
         var xyz2 = alt('x', 'y', 'z');
 
-- Intersection of character classes
+- `intersect(s1,s2,...)`
 
         var intersect = intersect(ch("abc"), ch("bcd")); // alt('b','c')
 
-  `intersect()` with no arg means the set of all characters
+  `intersect()` with no arg represents the set of *all* characters
 
         var all = intersect(); // range(0, 0x10FFFF);
 
-- Negation of a character class
+- `negate(s1)`
 
         var nonDigit = negate(digit); // any character except 0-9
 
         var ASCII = range(0x20, 0x7E);
         var nonDigitAscii = intersect(ASCII, negate(digit));
-
-As you see, `union` can always be represented by `alt` instead; 
-`intersect` and `negate` are most often used together for set subtraction,
-which can be done by `cc1.except(cc2)` instead
+                                                                   
+- `s0.except(s1,s2,...)`, which is equivalent to
+  `intersect(s0, negate(union(s1,s2...)))`
 
         var nonDigit2 = all.except(digit);
 
         var nonDigitAscii2 = ASCII.except(digit);
 
 
-## Rekex
+## beyond regex
 
 There is no way (in Java's dialect) to construct a regex
 which references itself in a subexpression. 
 If a grammar is recursive, we need to go beyond regular expressions.
+And even if regex suffices for matching inputs, 
+it is not great for extracting data and structures from inputs. 
+
 The parent project, [Rekex](../README.md), 
 is a PEG parser generator that derives grammar rules 
 from datatypes of the parse tree. 
 
 
+## References
 
+- [Examples](../rekex-example/src/main/java/org/rekex/exmple/regexp)
+
+- [RegExpApi.java](../rekex-regexp/src/main/java/org/rekex/regexp/RegExpApi.java)
+
+- [RegExp.java](../rekex-regexp/src/main/java/org/rekex/regexp/RegExp.java)
+
+- [java.util.regex.Pattern](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html)
+
+## P.S.
+
+Currently this library depends on Java 17 because of the parent project. 
+There should be no problem with porting it to a much older Java version,
+as a standalone library. (If someone has the time for it, it'd be great.)
+
+It also seems worthwhile to port the API to other programming languages.
+The algorithm to serialize the tree to regex is in 
+[ToRegex.java](../rekex-regexp/src/main/java/org/rekex/regexp/ToRegex.java).
+Please use 
+[Issue Tracker](https://github.com/zhong-j-yu/rekex/issues)
+for questions and discussions.
 
 ----
 <sub>Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a job; helps appreciated.</sub>
+I am looking for a Java job; helps appreciated.</sub>

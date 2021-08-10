@@ -73,7 +73,7 @@ public interface ExampleParser_Json3
             //   return members.values().stream().collect(Collectors.toMap(Member::name, Member::value)); // throws on duplicate keys
             HashMap<String,Object> map = new HashMap<>();
             for(var member : members.values())
-                map.put(member.name, member.value);
+                map.put(member.name, member.value); // tolerate duplicate keys
             return map;
         }
 

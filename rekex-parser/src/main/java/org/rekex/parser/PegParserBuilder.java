@@ -285,7 +285,7 @@ public class PegParserBuilder
         Path javaFilePath = generateJavaFile();
 
         // javac is very slow. show some message
-        logger().accept("javac compiling ... "+javaFilePath);
+        logger().accept("javac compiling ... "+javaFilePath.toAbsolutePath());
         PkgUtil.jc_compile(List.of(javaFilePath), outDirForClass(), javacOptions());
         logger().accept("javac done.");
         // apparently javac is slow on first invocation; but faster afterwards in the same VM.

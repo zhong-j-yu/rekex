@@ -1,7 +1,7 @@
 
 # Rekex - grammar rules as algebraic datatypes
 
-A context-free grammar is in the form of
+A context-free grammar has the form of
 
     A  = A1 | A2
     A1 = B C
@@ -9,7 +9,7 @@ A context-free grammar is in the form of
 
 which looks very much like definitions of algebraic datatypes.
 This is by no coincidence - both formalisms reflect an underlying
-mental model with which we build complex concepts from smaller constituents. 
+model with which we build complex concepts from constituents. 
 
 Given this correspondence, we could express a context-free grammar entirely 
 as datatypes in a programming language. For example, in Java 17,
@@ -28,8 +28,8 @@ eventually outputting a parse tree in the very same datatypes.
     A a = parser.matchFull(input);
 
 **Rekex** implements this novel idea for Java 17,
-addressing issues that probably already popped up in your head,
-proving that it is an elegant and practical approach to making parsers.
+addressing issues of practical concerns,
+proving that it is an elegant approach to making parsers.
 
 Read More:
 
@@ -43,4 +43,4 @@ Read More:
                                                   
 ----
 <sub>Create by [Zhong Yu](http://zhong-j-yu.github.io). 
-  I am looking for a job; helps appreciated.</sub>
+  I am looking for a Java job; helps appreciated.</sub>

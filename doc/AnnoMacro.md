@@ -91,4 +91,4 @@ with correct support for `hasCode, equals, toString` methods.
 
 ----
 <sub>Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a job; helps appreciated.</sub>
+I am looking for a Java job; helps appreciated.</sub>

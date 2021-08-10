@@ -229,6 +229,24 @@ class RegExpApiTest extends RegExpTestBase
         ;
     }
 
+    @Test void test_except2()
+    {
+        // predefined character class in union/intersect/negate
+        var r = alt(
+            "+",
+            '-',
+            predefined("\\w")
+        ).except(
+            '+',
+            '0',
+            predefined("\\p{Upper}")
+        );
+        test(r)
+            .regex("[\\+\\-\\w&&[^\\+0\\p{Upper}]]")
+            .noMatch("+", "0", "A")
+            .matches("-", "1", "a");
+    }
+
     @Test void test_seq()
     {
         var r = seq(

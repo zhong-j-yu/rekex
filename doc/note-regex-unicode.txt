@@ -36,7 +36,9 @@ As a sequence, no, because inputs cannot have such sequences.
 In our RegExp, we reject lone surrogates as Single or ends of Range.
 Otherwise, we could construct a regex with a surrogate pair
 from previously two separate constructs. We might be able to avoid that
-by exploiting the \\x{} escape, but that's not a documented behavior.
+by exploiting the \\x{} escapes, relying on the observation that
+"\\x{D800}\\x{DC00}" is treated as two separate characters;
+but that's not a documented behavior that we can rely on.
 
 A range can still range over the surrogate region, e.g. [\u0000-\uFFFF],
 which could match a lone surrogate in the input. Inputs should be
