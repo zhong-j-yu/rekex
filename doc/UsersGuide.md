@@ -41,6 +41,8 @@ Maven dependency:
             <version>1.0.0</version>
         </dependency>
 
+> *Not yet published in maven central. There appears to be a backlog in approving
+new projects. Meanwhile, if you want to try it out, please install the package locally.*
 
 ## Alteration Rule as Subtyping
 

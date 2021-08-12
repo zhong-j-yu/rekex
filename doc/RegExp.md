@@ -50,6 +50,9 @@ but can be used standalone as
             <version>1.0.0</version>
         </dependency>
 
+> *Not yet published in maven central. There appears to be a backlog in approving
+new projects. Meanwhile, if you want to try it out, please install the package locally.*
+
 All factory methods are static methods from
 [RegExpApi](../rekex-regexp/src/main/java/org/rekex/regexp/RegExpApi.java),
 which can be accessed by
