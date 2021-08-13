@@ -1,7 +1,7 @@
 
 ## @Regex and Equivalent Annotations
 
-The `@org.rekex.spec.Regex` annotation is used by Rekex 
+The [@org.rekex.spec.Regex](../rekex-grammar/src/main/java/org/rekex/spec/Regex.java) annotation is used by Rekex 
 to match inputs with regular expressions.
 It has the following attributes:
 
@@ -16,18 +16,22 @@ In the example of `@Regex(value="(true)\\s*", group=1) String`,
 the regular expression matches and consumes any input with literal `"true"`
 followed by zero or more whitespaces; however the `String` will only contain `"true"`.
 
+Note that Java regular expression works at the unit of "code point", not Java's `char`.
+
 Other annotations can be used in place of `@Regex` if they are convertible to `@Regex`
 through [AnnoMacro](./AnnoMacro.md). 
 
-`@org.rekex.helper.anno.Ch` -- to match a single code point,
-if it's contained in a set defined by union of `Ch.value` and `Ch.range` minus `Ch.except`.
+[@org.rekex.helper.anno.Ch](../rekex-grammar/src/main/java/org/rekex/helper/anno/Ch.java) 
+-- to match a single code point,
+if it's contained in a set defined by union of `Ch.value` and `Ch.range`, minus `Ch.except`.
 
 - `Ch.value` - a String with zero or more code points, e.g. `@Ch("a\n{")`
 - `Ch.range` - zero or more ranges of code points, e.g. `@Ch(range={'0','9','A','F'})`
 - `Ch.except` - a String with zero or more code points, e.g. `@Ch(range={' ',0x10FFFF}, except="\"\\")`
 - `Ch.ignoreCase` - case-insensitive matching if true.
 
-`@org.rekex.helper.anno.Str` -- to match a string literal,
+[@org.rekex.helper.anno.Str](../rekex-grammar/src/main/java/org/rekex/helper/anno/Str.java)
+-- to match a string literal,
 if it's contained in a set defined by `Str.value`
 
 - `Str.value` - a set of String literals, e.g.
@@ -37,7 +41,8 @@ if it's contained in a set defined by `Str.value`
     - `@Str({})` - never matches any input
 - `Str.ignoreCase` - case-insensitive matching if true.
 
-`@org.rekex.helper.anno.StrWs` -- similar to `@Str`, but also skips 
+[@org.rekex.helper.anno.StrWs](../rekex-grammar/src/main/java/org/rekex/helper/anno/StrWs.java)
+-- similar to `@Str`, but also skips 
 zero or more trailing whitespaces defined by `StrWs.wsChars`.
 For example, `@StrWs(value="true", wsChars=" \t") String`
 matches `"true"` followed by zero or more space/tab chars; 
