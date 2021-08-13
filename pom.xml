@@ -39,7 +39,7 @@
     <scm>
         <connection>scm:git:git://github.com/zhong-j-yu/rekex.git</connection>
         <developerConnection>scm:git:ssh://github.com:zhong-j-yu/rekex.git</developerConnection>
-        <url>https://github.com/zhong-j-yu/rekex/tree/master</url>
+        <url>https://github.com/zhong-j-yu/rekex/tree/main</url>
     </scm>
 
     <distributionManagement>

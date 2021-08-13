@@ -164,4 +164,8 @@ Usually, the end result of parsing is a tree structure
 that is fed to the next step, which requires full knowledge
 of the structure. Algebraic datatypes are usually the better choice.
 While Rekex provides a range of options of how "ctors" can be defined,
-it is simplest to use the canonical constructors of `record` classes. 
+it is simplest to use the canonical constructors of `record` classes.
+
+----
+<sub>Create by [Zhong Yu](http://zhong-j-yu.github.io).
+I am looking for a Java job; helps appreciated.</sub>

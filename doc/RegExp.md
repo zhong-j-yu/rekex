@@ -57,7 +57,7 @@ All factory methods are static methods from
 [RegExpApi](../rekex-regexp/src/main/java/org/rekex/regexp/RegExpApi.java),
 which can be accessed by
 
-    import static rekex.regexp.RegExpApi.*;
+    import static org.rekex.regexp.RegExpApi.*;
 
 
 ## argument types
