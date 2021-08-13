@@ -40,6 +40,8 @@ Read More:
 - [Examples](/rekex-example/src/main/java/org/rekex/exmple/parser)
 
 - [RegExp - structured regular expression](doc/RegExp.md)
+
+- [Datatypes - Abstract, OOP, Algebraic](doc/Datatypes.md)
                                                   
 ----
 <sub>Create by [Zhong Yu](http://zhong-j-yu.github.io). 
