@@ -26,7 +26,6 @@ public interface AnnoMacro<T, R>
     // actually, we don't enforce that T,R are Annotations;
     // intermediary non-Annotation types could be used in the chain of expansions.
     // nevertheless, this util is for Annotation->...->Annotation transformations.
-    // (transformations between ordinary, non-Annotation types don't need a library)
 
     /**
      * To resolve annotation macros.

@@ -5,12 +5,13 @@ Regular expression (regex) has got a bad reputation because of its typical compa
 representation, which is an alphabet soup obfuscating the internal structure. 
 It is also quite difficult to compose a complex regex by hand.
 
-The *RegExp* library solves this problem by providing factory methods like `seq(...), alt(...)`
-to construct regular expressions as trees of subexpressions.
+The [RegExp library](../rekex-regexp) solves this problem by providing 
+factory methods like `seq(e1, e2), alt(e1, e2)` etc.
+to create and transform regular expressions as data structures.
 The construction code will be long and wordy, by design,
-so that the structure is understandable at first glance.
+so that the structures can be understood at first glance.
 
-For example, we want a regex to match time format `HH:MM:SS`, optionally 
+For example, we want a regular expression to match time format `HH:MM:SS`, optionally 
 with `.mmm` for milliseconds.
 
         var digit = range('0', '9');   // 0-9
@@ -34,8 +35,8 @@ to interoperate with other software components
         
         "(?:[01][0-9]|2[0123]|24):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{3})?"
 
-See more examples [here](../rekex-example/src/main/java/org/rekex/exmple/regexp).
-Yes, there is the infamous regex for email address.
+See more examples [here](../rekex-example/src/main/java/org/rekex/exmple/regexp)
+(including the infamous regex for email address).
 
 RegExp fully conforms to 
 [java.util.regex.Pattern](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html),
@@ -50,9 +51,6 @@ but can be used standalone as
             <version>1.0.0</version>
         </dependency>
 
-> *Not yet published in maven central. There appears to be a backlog in approving
-new projects. Meanwhile, if you want to try it out, please install the package locally.*
-
 All factory methods are static methods from
 [RegExpApi](../rekex-regexp/src/main/java/org/rekex/regexp/RegExpApi.java),
 which can be accessed by
@@ -63,7 +61,7 @@ which can be accessed by
 ## argument types
 
 The datatypes we use to represent regular expressions are 
-[RegExp](../rekex-regexp/src/main/java/org/rekex/regexp/RegExp.java) and its subtypes.
+[RegExp](../rekex-regexp/src/main/java/org/rekex/regexp/RegExp.java) and subtypes.
 Most factory methods expect arguments of `RexExp`. For convenience, we also allow
 arguments of characters and strings, which are automatically converted to `RegExp`
 
@@ -82,7 +80,8 @@ In this document, "character" refers to unicode characters, ranging from U+0000 
 `String` will be interpreted as an `int[]` of characters, not as a `char[]`.
 
 Lone surrogates, i.e. code points in D800-DFFF, should not appear alone,
-either in regex or in input, since the behavior [isn't well-defined](./note-regex-unicode.txt).
+either in the regular expression or in the input, 
+since the behavior [is not very clear](./note-regex-unicode.txt).
 
 
 ## seq(...)
@@ -210,7 +209,7 @@ or by back-references.
         var ref1  = backRef("g1");
         var ref1_ = backRef(g1);
 
-The group number of a group (unnamed or named) within a regex can be found by
+The group number of a group (unnamed or named) within a regular expression can be found by
 
         var exp2 = seq(g1, ":", g2, ",", ref2);
         int g2_num = findGroupNumberIn(g2, exp2); // 2
@@ -319,7 +318,7 @@ methods `boundary` and `predefined`
 You do not need to worry about *character classes*,
 except if you are using the `except()` method.
 
-> Character class is not an essential concept in regular expression,
+> Character class is *not* an essential concept of regular expression,
 > even though it *is* an important, basic building block
 > for *implementations* of regex.
 
@@ -338,7 +337,7 @@ The following expressions are convertible to character classes
 
 - a single character, which is a character class of itself.
 
-- a predefined character class
+- a predefined character class, corresponding to a predefined set of characters.
   
 - `seq(s1)`, which is equivalent to `s1`
 
@@ -348,7 +347,8 @@ The following expressions are convertible to character classes
 
         var xyz = union('x', 'y', 'z');
                                      
-  `union(args)` can always be expressed as `alt(args)` instead  
+  `union(args)` can always be expressed as `alt(args)` instead; 
+  we recommend the `alt` form over the `union` form. 
 
         var xyz2 = alt('x', 'y', 'z');
 
@@ -412,5 +412,5 @@ Please use
 for questions and discussions.
 
 ----
-<sub>Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a Java job; helps appreciated.</sub>
+*Create by [Zhong Yu](http://zhong-j-yu.github.io).
+I am looking for a Java job; helps appreciated.*

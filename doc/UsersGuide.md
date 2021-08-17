@@ -41,9 +41,6 @@ Maven dependency:
             <version>1.0.0</version>
         </dependency>
 
-> *Not yet published in maven central. There appears to be a backlog in approving
-new projects. Meanwhile, if you want to try it out, please install the package locally.*
-
 ## Alteration Rule as Subtyping
 
 As an example let's build a Json parser, according to the grammar on [json.org](https://www.json.org) .
@@ -101,7 +98,7 @@ This can be expressed as a constructor
 
     record Member(JsonString name, Colon colon, JsonValue value){}
 
-Note that this record class has one public constructor, the implicit canonical constructor.
+Note that this record class has one public constructor, the implicit *canonical constructor*.
 `Colon` is assumed to be a datatype that matches `":"`, which we will talk about later.
 
 To Rekex, the datatype `Member` corresponds to a concatenation rule of 3 subrules
@@ -110,6 +107,8 @@ At runtime, the parser will try to match the input against the subrules in seque
 if successful, 3 arguments are instantiated which are fed to the constructor 
 to instantiate a `Member` instance.
 
+> The following sections will introduce more ways to represent alternation and concatenation rules;
+> however, `sealed` types and canonical `record` constructors are the recommended way. 
 
 ## @Ctor
 
@@ -397,7 +396,7 @@ Don't hesitate to define singleton enums with only one value; they are quite com
 
     enum Comma{ @Ch(",")I }
 
-We could also define singleton enums for tokens like `"["`. 
+> We could also define singleton enums for tokens like `"["`. 
 The benefit is that we clearly separated tokenization from parsing; the rest of the grammar 
 looks cleaner. On the other hand, since `"["` appears only once in our grammar,
 some people may prefer to use `@Ch("[")char` on the spot, 
@@ -418,7 +417,7 @@ annotation with the RegExp API.
 
 ### Whitespace handling
 
-The Json grammar, like most grammars, allows copious whitespaces between tokens.
+The Json grammar, like most grammars, allows whitespaces between most tokens.
 The best way to handle them is to consume trailing whitespaces after each token.
 
 Here's how it's achieved in Rekex.
@@ -426,7 +425,7 @@ An `@Regex` can specific a `group` attribute, for example
 
     @Regex(value="(true)\\s*", group=1)
 
-The regex matches `"true"` followed by zero or more whitespaces. 
+This regex matches `"true"` followed by zero or more whitespaces. 
 The `group` attribute indicates that only group#1 is the effective payload 
 we are interested in. If this `@Regex` is applied to a `String`, 
 the grammar rule will match and consume `"true"` with trailing whitespaces, 
@@ -462,8 +461,8 @@ use `@Token` instead of `@Ch` or `@Str`.
 
     record JsonArray( @Token("[")char bL, ... ) ...
 
-Be careful though. For example, the beginning quote of a Json string cannot be a `@Token`,
-because whitespaces after the quote are characters in the string, not to be ignored.
+Be careful though. For example, the starting quote of a Json string cannot be a `@Token`,
+because whitespaces after the quote are characters in the string and cannot be skipped.
 (Maybe "Token" isn't a great choice of name; pick your own name.)
 
 We'll also need to match optional whitespaces in some other places,
@@ -479,22 +478,24 @@ Define a datatype for optional whitespaces and insert it wherever it's allowed.
 
 ## PegParser
 
-Once the datatypes are defined, we can create a parser for the *root type*
+Once the datatypes are defined, we can create a 
+[PegParser](../rekex-parser/src/main/java/org/rekex/parser/PegParser.java)
+for the *root type*
 
     PegParser<JsonInput> parser = PegParser.of(JsonInput.class);
 
-The root type can be any datatype. For example, if inputs are expected 
-to be always Json objects
+The root type can be any datatype in the grammar. 
+For example, if inputs are expected to be always Json objects
 
     PegParser<JsonObject> parser = PegParser.of(JsonObject.class);
 
 Even "small" datatypes like `JsonChar` can be root types.
 We can unit test our grammar piece by piece this way.
 
-`PegParser.of(rootType)` will generate and compile a Java source file 
+The method `PegParser.of(rootType)` generates and compiles a Java source file 
 under the `/tmp` directory. 
-
-For more options of how a parser is built, use `PegParserBuilder`
+For more options of how a parser is built, use 
+[PegParserBuilder](../rekex-parser/src/main/java/org/rekex/parser/PegParserBuilder.java)
 
     var builder = new PegParserBuilder()
         .rootType(JsonValue.class)
@@ -515,8 +516,8 @@ so that we can instantiate the parser directly.
     static final PegParser<JsonValue> parser = new MyJsonParser();    
 
 A `PegParser` is stateless, safe to be shared and invoked concurrently.
-Meanwhile, the constructor is also lightweight, 
-so don't refrain from creating new instances on demand.
+Meanwhile, the constructor is lightweight, 
+so don't refrain from creating new instances on demand either.
 
 ## ParseResult
 
@@ -525,9 +526,11 @@ To invoke a parser against an input
     ParseResult<Foo> result = parser.parse(input); // or parse(input, start, end)
     System.out.println(result);
 
-In the current version of Rekex, only `CharSequence` inputs are supported.
+> In the current version of Rekex, only `CharSequence` inputs are supported.
 
-There are 4 types of results: `Full, Partial, Fail, Fatal`
+There are 4 subtypes of
+[ParseResult](../rekex-parser/src/main/java/org/rekex/parser/ParseResult.java)
+: `Full, Partial, Fail, Fatal`
 
 - `ParseResult.Full<Foo>` - the parser matched the input from start to end.
     ```                                                        
@@ -614,11 +617,11 @@ is found in the catalog, the grammar rule is derived as previously specified.
 
 - [RegExp - structured regular expression](./RegExp.md)
 
-- [PEG](https://bford.info/pub/lang/peg.pdf)
+- [PEG - Parsing Expression Grammar](https://bford.info/pub/lang/peg.pdf)
 
 Comments? Questions? Bugs? Contributing? 
 Please use the [Issue Tracker](https://github.com/zhong-j-yu/rekex/issues). 
 
 ----
-<sub>Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a Java job; helps appreciated.</sub>
+*Create by [Zhong Yu](http://zhong-j-yu.github.io).
+I am looking for a Java job; helps appreciated.*

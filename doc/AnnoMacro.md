@@ -11,7 +11,8 @@ e.g. `@Red()`, `@HSB(h,s,b)`, that are convertible to `@Color(r,g,b)`.
 More importantly, we want the users of the library
 to be able to define their own annotations, representing colors in their own ways.
 
-`AnnoMacro` is a small utility for that purpose. An "annotation macro" `A1` 
+[AnnoMacro](../rekex-grammar/src/main/java/org/rekex/annomacro/AnnoMacro.java) 
+is a small utility for that purpose. An "annotation macro" `A1` 
 contains a `public static final` field of `AnnoMacro<A1,A2>`,
 which is a function that maps `A1` to `A2`.
 `AnnoMacro.Resolver` resolves `A1` to `A2`, and possibly `A2` to `A3`
@@ -50,7 +51,10 @@ if `A2` is also a macro, and so on, until reaching a value that's not a macro.
         assert color instanceof Color;
     }
 
-`AnnoBuilder` can instantiate an annotation from name-value pairs.
+---
+
+[AnnoBuilder](../rekex-common_util/src/main/java/org/rekex/common_util/AnnoBuilder.java) 
+can instantiate an annotation from name-value pairs.
 
     AnnoBuilder.of(Gray.class)
         .def("value", 0.75)
@@ -69,9 +73,9 @@ You can define your own subclass for an annotation interface,
 but it's a pain to properly implement `hasCode, equals, toString` methods
 as specified by `Annotation`.
 
-`AnnoBuilder` can convert an object `a1` that nominally implements an annotation
-interface to an object `a2` that faithfully implements the annotation interface,
-with correct support for `hasCode, equals, toString` methods. 
+`AnnoBuilder` can convert an object `a1`, which nominally implements an annotation
+interface, to an object `a2`, which faithfully implements the annotation interface
+with correct `hasCode, equals, toString` implementations. 
                                                       
     record GrayImpl(double value) implements Gray
     {
@@ -81,14 +85,8 @@ with correct support for `hasCode, equals, toString` methods.
     Gray a1 = new GrayImpl(0.75);
     Gray a2 = AnnoBuilder.build(a1);
 
-## References
-
-- [AnnoMacro.java](../rekex-grammar/src/main/java/org/rekex/annomacro/AnnoMacro.java)
-
-- [AnnoBuilder.java](../rekex-common_util/src/main/java/org/rekex/common_util/AnnoBuilder.java)
-
 
 
 ----
-<sub>Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a Java job; helps appreciated.</sub>
+*Create by [Zhong Yu](http://zhong-j-yu.github.io).
+I am looking for a Java job; helps appreciated.*

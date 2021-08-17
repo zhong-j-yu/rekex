@@ -154,5 +154,5 @@ from following procedures, whichever succeeds first
 - [@Regex and equivalent](./RegexAnno.md)  
 
 ----
-<sub>Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a Java job; helps appreciated.</sub>
+*Create by [Zhong Yu](http://zhong-j-yu.github.io).
+I am looking for a Java job; helps appreciated.*

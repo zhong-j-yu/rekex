@@ -11,6 +11,17 @@ package org.rekex.parser;
 public interface PegParser<T>
 {
     /**
+     * Create a parser with the root type as the `rootClass`.
+     * For more options, see {@link PegParserBuilder}.
+     */
+    public static <T> PegParser<T> of(Class<T> rootClass)
+    {
+        return new PegParserBuilder()
+            .rootType(rootClass)
+            .parser();
+    }
+
+    /**
      * Equivalent to `parse(chars, 0. chars.length())`
      */
     default ParseResult<T> parse(CharSequence chars)
@@ -40,17 +51,6 @@ public interface PegParser<T>
         if(result instanceof ParseResult.Fatal<T> fatal)
             throw new Exception("fatal error: "+fatal.toString(), fatal.cause());
         throw new AssertionError();
-    }
-
-    /**
-     * Create a parser with the root type as the `rootClass`.
-     * For more options, see {@link PegParserBuilder}.
-     */
-    public static <T> PegParser<T> of(Class<T> rootClass)
-    {
-        return new PegParserBuilder()
-            .rootType(rootClass)
-            .parser();
     }
 
 }

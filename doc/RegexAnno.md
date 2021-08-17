@@ -1,7 +1,7 @@
 
 ## @Regex and Equivalent Annotations
 
-The [@org.rekex.spec.Regex](../rekex-grammar/src/main/java/org/rekex/spec/Regex.java) annotation is used by Rekex 
+The [@Regex](../rekex-grammar/src/main/java/org/rekex/spec/Regex.java) annotation is used by Rekex 
 to match inputs with regular expressions.
 It has the following attributes:
 
@@ -19,9 +19,22 @@ followed by zero or more whitespaces; however the `String` will only contain `"t
 Note that Java regular expression works at the unit of "code point", not Java's `char`.
 
 Other annotations can be used in place of `@Regex` if they are convertible to `@Regex`
-through [AnnoMacro](./AnnoMacro.md). 
+through [AnnoMacro](./AnnoMacro.md).
+For example, you can define `@Hex` as equivalent to `@Regex("[0-9A-Fa-f]")`
 
-[@org.rekex.helper.anno.Ch](../rekex-grammar/src/main/java/org/rekex/helper/anno/Ch.java) 
+        @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
+        @interface Hex
+        {
+            AnnoMacro<Hex,Regex> toRegex = thiz->
+                AnnoBuilder.build(Regex.class, "[0-9A-Fa-f]");
+        }
+
+>The annotation must be prefixed with
+`@Target(ElementType.TYPE_USE) @Retention(RetentionPolicy.RUNTIME)`.
+
+Rekex ships with a few commonly used annotation macros:
+
+[@Ch](../rekex-grammar/src/main/java/org/rekex/helper/anno/Ch.java) 
 -- to match a single code point,
 if it's contained in a set defined by union of `Ch.value` and `Ch.range`, minus `Ch.except`.
 
@@ -30,7 +43,7 @@ if it's contained in a set defined by union of `Ch.value` and `Ch.range`, minus 
 - `Ch.except` - a String with zero or more code points, e.g. `@Ch(range={' ',0x10FFFF}, except="\"\\")`
 - `Ch.ignoreCase` - case-insensitive matching if true.
 
-[@org.rekex.helper.anno.Str](../rekex-grammar/src/main/java/org/rekex/helper/anno/Str.java)
+[@Str](../rekex-grammar/src/main/java/org/rekex/helper/anno/Str.java)
 -- to match a string literal,
 if it's contained in a set defined by `Str.value`
 
@@ -41,7 +54,7 @@ if it's contained in a set defined by `Str.value`
     - `@Str({})` - never matches any input
 - `Str.ignoreCase` - case-insensitive matching if true.
 
-[@org.rekex.helper.anno.StrWs](../rekex-grammar/src/main/java/org/rekex/helper/anno/StrWs.java)
+[@StrWs](../rekex-grammar/src/main/java/org/rekex/helper/anno/StrWs.java)
 -- similar to `@Str`, but also skips 
 zero or more trailing whitespaces defined by `StrWs.wsChars`.
 For example, `@StrWs(value="true", wsChars=" \t") String`
@@ -51,18 +64,6 @@ the `String` value will only contain `"true"`.
 - `StrWs.wsChars` - a String with zero or more code points,
     as the set of whitespace characters.
   
-You can also define your own `@Regex` equivalent annotations, 
-for example, define `@Hex` as equivalent to `@Regex("[0-9A-Fa-f]")`
-
-        @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-        @interface Hex
-        {
-            AnnoMacro<Hex,Regex> toRegex = thiz->
-                AnnoBuilder.build(Regex.class, "[0-9A-Fa-f]");
-        }
-
-Note that you must prefix the annotation with 
-`@Target(ElementType.TYPE_USE) @Retention(RetentionPolicy.RUNTIME)`.
 
 Most likely, you'll need to define your annotation that's
 convertible to `@StrWs` with a default `wsChars`
@@ -74,7 +75,7 @@ convertible to `@StrWs` with a default `wsChars`
             AnnoMacro<Token, StrWs> toStrWs = StrWs.Macro.of(Token::value, " \t\r\n");
         }
 
-## create an @Regex equivalent with RegExp
+## create @Regex equivalent with RegExp
 
 [RegExp](./RegExp.md) API can be used to compose complex regular expressions.
 
@@ -98,10 +99,6 @@ convertible to `@StrWs` with a default `wsChars`
                 AnnoBuilder.build(Regex.class, RegexUtil.signedInt());
         }
 
-## References
-
-- [Regex.java](../rekex-grammar/src/main/java/org/rekex/spec/Regex.java)
-
-- [org.rekex.helper.anno](../rekex-grammar/src/main/java/org/rekex/helper/anno)
-
-- [RegExp](./RegExp.md)
+----
+*Create by [Zhong Yu](http://zhong-j-yu.github.io).
+I am looking for a Java job; helps appreciated.*
