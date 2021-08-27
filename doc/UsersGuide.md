@@ -38,7 +38,7 @@ Maven dependency:
         <dependency>
             <groupId>org.rekex</groupId>
             <artifactId>rekex-parser</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
 
 ## Alteration Rule as Subtyping
@@ -220,13 +220,6 @@ This usually works and you don't need to worry about it.
 If it doesn't work, Rekex will report an error, and you'll
 have to specific the order by `@Ctor(1)`, `@Ctor(2)`, etc. 
 
-
-### @Permits vs @Ctor
-
-It is an error if a datatype is annotated by `@Permits`,
-and at the same time, contains constructors/methods annotated with `@Ctor`.
-They are conflicting instructions to Rekex on how to derive the grammar rule for the datatype.
-Consult the Specification for the exact algorithm and process that Rekex derives grammar rules.
 
 ## Repetition Rule as `List<E>` or `E[]`
 
@@ -603,8 +596,9 @@ so that it's easier to review the grammar.
 When the builder tries to derive a grammar rule for a datatype,
 it first searches the ctor catalog; if there are one or more ctors
 that return a subtype of the datatype, they are used to create 
-an alternation rule for the datatype. If no ctor for the datatype
-is found in the catalog, the grammar rule is derived as previously specified.
+an alternation rule for the datatype. 
+Otherwise, ctors are searched in the class body of the datatype; 
+if not found there, ctors are searched in the subtypes.
 
 
 ## References

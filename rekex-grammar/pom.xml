@@ -7,7 +7,7 @@
     <parent>
         <artifactId>rekex-parent</artifactId>
         <groupId>org.rekex</groupId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
     </parent>
 
     <artifactId>rekex-grammar</artifactId>

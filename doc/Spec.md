@@ -73,7 +73,7 @@ from following procedures, whichever succeeds first
   substitution `{Ti:=Ai}` such that the method return type, with the substitution applied,
   is a subtype of the target type, the method is a "candidate ctor". 
   If there are one or more candidate ctors in the catalog for the target type,
-  invoke subprocedure `derive_from_ctor_list` with these ctors. 
+  invoke subprocedure *derive_from_ctor_list* with these ctors. 
   
 - If the target datatype is a `int, char, Integer, Character, String` type,
   and its annotations contains exactly one annotation that's convertible to 
@@ -88,31 +88,32 @@ from following procedures, whichever succeeds first
 - If the target datatype is `org.rekex.spec.Peek<E>` or `org.rekex.spec.Not<E>`,
   return a *Lookahead/Lookbehind Rule*, with the subrule derived from `E`.
   
-- > The following clauses require that the target datatype is a class or interface type,
-  or the procedure fails. The class or interface is referred to simply as *the class*.
+> The following clauses require that the target datatype is a class or interface type,
+> or the procedure fails. The class or interface is referred to simply as *the class*.
 
 - If the body of the class declares one or more "ctors",
   each ctor being either a public constructor, or a public static method,
   that is annotated with `@org.rekex.spec.Ctor`,
-  invoke subprocedure `derive_from_ctor_list` with these ctors.
-  
-- If the class is annotated with `@org.rekex.spec.Permits`,
-  invoke subprocedure `derive_from_subclass_list`, with `value` of the `@Permits` annotation.
-  
-- > It is an error if both of the preceding two clauses are applicable.
+  invoke subprocedure *derive_from_ctor_list* with these ctors.
 
-- If the class is an `enum` type, it must contain one or more constant fields; 
+- If the class is an `enum` type, it must contain one or more constant fields;
   each field must contain exactly one annotation that's convertible to
-  an `@org.rekex.spec.Regex` through AnnoMacro. 
+  an `@org.rekex.spec.Regex` through AnnoMacro.
   The grammar rule for the `enum` type is an *Alternation Rule*, with
   each subrule as a `Regex Rule` referencing a constant field and its `@Regex` annotation.
   
+  > It's possible that ctors are declared in the body of an enum type, 
+  > in which case the previous clause precedes this clause.
+
+- If the class is annotated with `@org.rekex.spec.Permits`,
+  invoke subprocedure *derive_from_subclass_list*, with `value` of the `@Permits` annotation.
+  
 - If the class is a `sealed` type,
-  invoke subprocedure `derive_from_subclass_list`, with classes in the `permits` clause.
+  invoke subprocedure *derive_from_subclass_list*, with classes in the `permits` clause.
   
 - If the class contains exactly one public constructor, 
   and it contains at least one constructor parameter,
-  invoke subprocedure `derive_from_ctor_list` with the constructor as the only ctor.
+  invoke subprocedure *derive_from_ctor_list* with the constructor as the only ctor.
   
 ### subprocedures
 

@@ -48,7 +48,7 @@ but can be used standalone as
         <dependency>
             <groupId>org.rekex</groupId>
             <artifactId>rekex-regexp</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
 
 All factory methods are static methods from

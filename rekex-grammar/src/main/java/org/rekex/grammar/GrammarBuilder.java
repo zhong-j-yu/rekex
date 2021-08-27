@@ -232,37 +232,31 @@ class GrammarBuilder
         Class<?> clazz = classType.clazz();
         checkClassAccessible(clazz);
 
-        // explicit
-        //   @Permits() on class
         //   @Ctor on constructors/methods declared in class
-        // but not both
+        {
+            var ctorList = findCtorListIn(clazz, classType);
+            if (!ctorList.isEmpty())
+                return deriveFromCtorList(id, classType, ctorList);
+        }
+
+        // enum
+        // @Permits and permits won't work on enum, because there's no named subclasses
+        // @Ctor methods could be declared in enum{} which is handled by previous logic
+        //   if none, derived rules for enum constants
+        if(clazz.isEnum())
+        {
+            return deriveEnum(id, classType);
+            // enum types are sealed or final. this clause precedes the sealed clause.
+        }
+
+        //   @Permits() on class
         {
             Permits permits = clazz.getAnnotation(Permits.class);
-            var ctorList = findCtorListIn(clazz, classType);
-
-            if(permits!=null && !ctorList.isEmpty())
-                throw new Exception("both @Permits and @Ctor are specified for: "+clazz);
-
-            if(!ctorList.isEmpty())
-                return deriveFromCtorList(id, classType, ctorList);
-
             if(permits!=null)
             {
                 validatePermitsAnno(clazz, permits);
                 return deriveAltSubClasses(id, classType, permits.value());  // ordered
             }
-
-            // else continue
-        }
-
-        // enum
-        // @Permits won't work on enum, because there's no named subclasses
-        // @Ctor methods could be declared in enum{} which is handled by previous logic
-        // if neither, derived rules for enum constants
-        if(clazz.isEnum())
-        {
-            return deriveEnum(id, classType);
-            // enum types are sealed or final. this clause precedes the sealed clause.
         }
 
         // sealed class without @Permits

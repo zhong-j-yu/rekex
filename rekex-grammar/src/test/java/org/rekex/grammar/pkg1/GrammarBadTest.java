@@ -41,12 +41,6 @@ public class GrammarBadTest extends GrammarTestBase
     static class ClassNotPublic{}
     public class ClassNotStatic {}
 
-    @Permits(BothPermitsAndCtors.class)
-    public static class BothPermitsAndCtors{
-        @Ctor
-        public static BothPermitsAndCtors ctor(){ return null; }
-    }
-
     public static class ZeroPublicConstructor{
         ZeroPublicConstructor(){}
     }
@@ -130,8 +124,6 @@ public class GrammarBadTest extends GrammarTestBase
         ex=failOn(ClassNotStatic.class, "static");
 
         ex=failOn(ClassNotPublic.class, "public");
-
-        ex=failOn(BothPermitsAndCtors.class, "both @Permits and @Ctor");
 
         ex=failOn(ZeroPublicConstructor.class, "single non-default public constructor");
         ex=failOn(TwoPublicConstructor.class, "single non-default public constructor");
