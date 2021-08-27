@@ -24,7 +24,7 @@ public class SeqNTest extends PegParserTestBase
     ){}
 
     {
-        initParsers(Foo.class, null);
+        initParsers(Foo.class);
     }
 
     @Test

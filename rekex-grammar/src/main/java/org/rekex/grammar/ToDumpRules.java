@@ -9,6 +9,7 @@ import org.rekex.spec.Regex;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -91,6 +92,7 @@ class ToDumpRules
         new SwitchOnType<Instantiator,String>()
             .on(Instantiator.NewInstance.class, x->toStr(x.constructor()))
             .on(Instantiator.StaticMethod.class, x->toStr(x.method()))
+            .on(Instantiator.InstanceMethod.class, x->toStr(x.method()))
             .on(Instantiator.StaticField.class, x->toStr(x.field()))
             .complete(Instantiator.class);
     static String toStr(Instantiator instantiator)
@@ -108,7 +110,8 @@ class ToDumpRules
         var clazz = method.getDeclaringClass();
         var name = method.getName();
         var paramTypes = method.getParameterTypes();
-        return "ctor: %s.%s(%s)".formatted(toStr(clazz), name, toStr(paramTypes));
+        var receiver = Modifier.isStatic(method.getModifiers()) ? toStr(clazz) : "catalog";
+        return "ctor: %s.%s(%s)".formatted(receiver, name, toStr(paramTypes));
     }
     static String toStr(Field field)
     {

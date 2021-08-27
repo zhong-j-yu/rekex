@@ -17,7 +17,7 @@ import java.util.function.Consumer;
  */
 public class PegParserBuilder
 {
-    Class<?> ctorCatalog;
+    Class<?> catalogClass;
     AnnoType rootType;
     String packageName;
     String className;
@@ -40,18 +40,18 @@ public class PegParserBuilder
     }
 
     /**
-     * Set the ctor catalog.
+     * Set the ctor catalog class.
      */
-    public PegParserBuilder ctorCatalog(Class<?> ctorCatalog)
+    public PegParserBuilder catalogClass(Class<?> catalogClass)
     {
-        this.ctorCatalog = ctorCatalog;
+        this.catalogClass = catalogClass;
         this.grammar=null;
         this.grammarMd5=null;
         return this;
     }
-    Class<?> ctorCatalog()
+    Class<?> catalogClass()
     {
-        return ctorCatalog; // null is ok
+        return catalogClass; // null is ok
     }
 
     /**
@@ -196,12 +196,12 @@ public class PegParserBuilder
     // terminal actions -------------------------------------------------
 
     /**
-     * The grammar derived from the rootType and the ctorCatalog.
+     * The grammar derived from the rootType and the catalogClass.
      */
     public Grammar grammar()
     {
         if(grammar==null)
-            grammar = Grammar.deriveFrom(List.of(rootType()), ctorCatalog());
+            grammar = Grammar.deriveFrom(List.of(rootType()), catalogClass());
         return grammar;
     }
     String grammarMd5()
@@ -267,12 +267,28 @@ public class PegParserBuilder
      *     A Java source file will be generated, compiled by javac.
      *     The parser class will be loaded, and an instance created.
      * </p>
+     * <p>
+     *     If a ctor catalog class is specified which contains non-static method,
+     *     use {@link #build(Object) build(catalogInstance)} instead.
+     * </p>
      */
-    public <T> PegParser<T> parser()
+    public <T> PegParser<T> build()
+    {
+        return build(null);
+    }
+
+    /**
+     * Create an instance of the parser with `catalogInstance`
+     * <p>
+     *     A Java source file will be generated, compiled by javac.
+     *     The parser class will be loaded, and an instance created with `catalogInstance`.
+     * </p>
+     */
+    public <T> PegParser<T> build(Object catalogInstance)
     {
         try
         {
-            return buildParserE();
+            return buildParserE(catalogInstance);
         }
         catch (Exception exception)
         {
@@ -280,8 +296,16 @@ public class PegParserBuilder
         }
     }
 
-    <T> PegParser<T> buildParserE() throws Exception
+    <T> PegParser<T> buildParserE(Object catalog) throws Exception
     {
+        if(grammar().requiresCatalogInstance())
+        {
+            if(catalog==null)
+                throw new Exception("must provide an instance for ctor catalog "+ catalogClass);
+            if(!catalogClass().isInstance(catalog))
+                throw new Exception("not an instance of ctor catalog class: "+catalog);
+        }
+
         Path javaFilePath = generateJavaFile();
 
         // javac is very slow. show some message
@@ -299,9 +323,21 @@ public class PegParserBuilder
 
         var clazz = PkgUtil.loadClass(packageName()+"."+className(), parentClassLoader(), outDirForClass());
 
-        var constructor = clazz.getConstructor();
-        @SuppressWarnings("unchecked")
-        PegParser<T> parser = (PegParser<T>)constructor.newInstance();
-        return parser;
+        if(catalogClass !=null)
+        {
+            // the constructor requires an instance;
+            // but we can pass a null if all ctors are static (don't document this "feature")
+            var constructor = clazz.getConstructor(catalogClass);
+            @SuppressWarnings("unchecked")
+            PegParser<T> parser = (PegParser<T>)constructor.newInstance(catalog);
+            return parser;
+        }
+        else
+        {
+            var constructor = clazz.getConstructor();
+            @SuppressWarnings("unchecked")
+            PegParser<T> parser = (PegParser<T>)constructor.newInstance();
+            return parser;
+        }
     }
 }

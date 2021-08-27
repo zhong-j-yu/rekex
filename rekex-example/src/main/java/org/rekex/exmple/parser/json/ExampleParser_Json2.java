@@ -8,7 +8,6 @@ import org.rekex.helper.datatype.SepBy;
 import org.rekex.parser.PegParser;
 import org.rekex.parser.PegParserBuilder;
 import org.rekex.regexp.RegExpApi;
-import org.rekex.spec.Ctor;
 import org.rekex.spec.Regex;
 
 import java.lang.annotation.ElementType;
@@ -99,16 +98,14 @@ public interface ExampleParser_Json2
 
     // rules --------------------------------------------------------
 
-    interface RulesCatalog
+    class RulesCatalog
     {
-        @Ctor public static
-        Input input(OptWs leadingWs, JsonElement value)
+        public Input input(OptWs leadingWs, JsonElement value)
         {
             return new Input(value);
         }
 
-        @Ctor public static
-        JsonObject object(@Token("{") char PL, SepBy<Member, Comma> members, @Token("}") char PR)
+        public JsonObject object(@Token("{") char PL, SepBy<Member, Comma> members, @Token("}") char PR)
         {
             JsonObject obj = new JsonObject();
             for(var member : members.values())
@@ -118,10 +115,9 @@ public interface ExampleParser_Json2
 
         // intermediary data carrier; won't be present in the final AST.
         // the syntactic structure is defined not here, but by member() ctor.
-        record Member(String name, JsonElement value){}
+        public record Member(String name, JsonElement value){}
 
-        @Ctor public static
-        Member member(JsonPrimitive name, @Token(":") char COLON, JsonElement value)
+        public Member member(JsonPrimitive name, @Token(":") char COLON, JsonElement value)
         {
             if(name.object instanceof String str)
                 return new Member(str, value);
@@ -134,8 +130,7 @@ public interface ExampleParser_Json2
             // we could raise an exception to stop the parsing.
         }
 
-        @Ctor public static
-        JsonArray array(@Token("[") char PL, SepBy<JsonElement, Comma> values, @Token("]") char PR)
+        public JsonArray array(@Token("[") char PL, SepBy<JsonElement, Comma> values, @Token("]") char PR)
         {
             JsonArray array = new JsonArray();
             for(var value : values.values())
@@ -143,26 +138,22 @@ public interface ExampleParser_Json2
             return array;
         }
 
-        @Ctor public static
-        JsonPrimitive trueV(@Token("true") String str)
+        public JsonPrimitive trueV(@Token("true") String str)
         {
             return new JsonPrimitive(Boolean.TRUE);
         }
 
-        @Ctor public static
-        JsonPrimitive falseV(@Token("false") String str)
+        public JsonPrimitive falseV(@Token("false") String str)
         {
             return new JsonPrimitive(Boolean.FALSE);
         }
 
-        @Ctor public static
-        JsonNull nullV(@Token("null") String str)
+        public JsonNull nullV(@Token("null") String str)
         {
             return JsonNull.INSTANCE;
         }
 
-        @Ctor public static
-        JsonPrimitive number(@RegexNumber String str, OptWs trailingWs)
+        public JsonPrimitive number(@RegexNumber String str, OptWs trailingWs)
         {
             var num = new BigDecimal(str);
             return new JsonPrimitive(num);
@@ -170,10 +161,9 @@ public interface ExampleParser_Json2
 
 
         // a logical character inside a string literal
-        record JsonChar(int c){}
+        public record JsonChar(int c){}
 
-        @Ctor public static
-        JsonPrimitive string(@Ch(QT) char QL, List<JsonChar> chars, @Ch(QT) char QR, OptWs trailingWs)
+        public JsonPrimitive string(@Ch(QT) char QL, List<JsonChar> chars, @Ch(QT) char QR, OptWs trailingWs)
         {
             StringBuilder sb = new StringBuilder(chars.size());
             for(var jc : chars)
@@ -181,14 +171,12 @@ public interface ExampleParser_Json2
             return new JsonPrimitive(sb.toString());
         }
 
-        @Ctor public static
-        JsonChar char1(@Ch(range={0x20, 0x10FFFF}, except=BS+QT) int c)
+        public JsonChar char1(@Ch(range={0x20, 0x10FFFF}, except=BS+QT) int c)
         {
             return new JsonChar(c);
         }
 
-        @Ctor public static
-        JsonChar escC(@Ch(BS) char BSL, @Ch(escChars1) char c)
+        public JsonChar escC(@Ch(BS) char BSL, @Ch(escChars1) char c)
         {
             int i = escChars1.indexOf(c);
             assert i!=-1;
@@ -196,8 +184,7 @@ public interface ExampleParser_Json2
             return new JsonChar(c2);
         }
 
-        @Ctor public static
-        JsonChar escU(@Ch(BS) char BSL, @Ch("u") char U, @Regex("[0-9A-Fa-f]{4}") String hhhh)
+        public JsonChar escU(@Ch(BS) char BSL, @Ch("u") char U, @Regex("[0-9A-Fa-f]{4}") String hhhh)
         {
             char c = (char)Integer.parseInt(hhhh, 16);
             return new JsonChar(c);
@@ -209,8 +196,8 @@ public interface ExampleParser_Json2
     {
         return new PegParserBuilder()
             .rootType(Input.class)
-            .ctorCatalog(RulesCatalog.class)
-            .parser();
+            .catalogClass(RulesCatalog.class)
+            .build(new RulesCatalog());
     }
 
     public static void main(String[] args)

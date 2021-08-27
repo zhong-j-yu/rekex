@@ -67,53 +67,58 @@ a PEG parser generator will interpret them according to PEG semantics.
 Given a target datatype, its corresponding grammar rule is derived
 from following procedures, whichever succeeds first
 
-- For each declared method in the "ctor catalog" class
-  that is `public static`, annotated with `@org.rekex.spec.Ctor`,
-  with 0 or more type parameters `{Ti}`, if there exists a unique
-  substitution `{Ti:=Ai}` such that the method return type, with the substitution applied,
-  is a subtype of the target type, the method is a "candidate ctor". 
-  If there are one or more candidate ctors in the catalog for the target type,
-  invoke subprocedure *derive_from_ctor_list* with these ctors. 
+1. For each `public ` method declared in the "ctor catalog" class,
+   with 0 or more type parameters `{Ti}`, if there exists a unique
+   substitution `{Ti:=Ai}` such that the method return type, with the substitution applied,
+   is a subtype of the target type, the method is a "candidate ctor". 
+   If there are one or more candidate ctors in the catalog for the target type,
+   invoke subprocedure *derive_from_ctor_list* with these ctors. 
   
-- If the target datatype is a `int, char, Integer, Character, String` type,
-  and its annotations contains exactly one annotation that's convertible to 
-  an `@org.rekex.spec.Regex` through AnnoMacro, return a *Regex Rule*,
-  with `regex, flags, group` from the `@Regex` annotation.
+2. If the target datatype is a `int, char, Integer, Character, String` type,
+   and its annotations contains exactly one annotation that's convertible to 
+   an `@org.rekex.spec.Regex` through AnnoMacro, return a *Regex Rule*,
+   with `regex, flags, group` from the `@Regex` annotation.
   
-- If the target datatype is a `java.util.List<E>` or `E[]`,
-  return a *Repetition Rule*, with the subrule derived from `E`,
-  with `min/max` derived from intersections of all `@org.rekex.spec.SizeLimit`
-  annotations converted from annotations on the target type through AnnoMacro.
+3. If the target datatype is a `java.util.List<E>` or `E[]`,
+   return a *Repetition Rule*, with the subrule derived from `E`,
+   with `min/max` derived from intersections of all `@org.rekex.spec.SizeLimit`
+   annotations converted from annotations on the target type through AnnoMacro.
 
-- If the target datatype is `org.rekex.spec.Peek<E>` or `org.rekex.spec.Not<E>`,
-  return a *Lookahead/Lookbehind Rule*, with the subrule derived from `E`.
+4. If the target datatype is `org.rekex.spec.Peek<E>` or `org.rekex.spec.Not<E>`,
+   return a *Lookahead/Lookbehind Rule*, with the subrule derived from `E`.
   
-> The following clauses require that the target datatype is a class or interface type,
-> or the procedure fails. The class or interface is referred to simply as *the class*.
+   > The following clauses require that the target datatype is a class or interface type,
+   > or the procedure fails. The class or interface is referred to simply as *the class*.
 
-- If the body of the class declares one or more "ctors",
-  each ctor being either a public constructor, or a public static method,
-  that is annotated with `@org.rekex.spec.Ctor`,
-  invoke subprocedure *derive_from_ctor_list* with these ctors.
+5. If the body of the class declares one or more "ctors",
+   each ctor being either a public constructor, or a public static method,
+   that is annotated with `@org.rekex.spec.Ctor`,
+   invoke subprocedure *derive_from_ctor_list* with these ctors.
 
-- If the class is an `enum` type, it must contain one or more constant fields;
-  each field must contain exactly one annotation that's convertible to
-  an `@org.rekex.spec.Regex` through AnnoMacro.
-  The grammar rule for the `enum` type is an *Alternation Rule*, with
-  each subrule as a `Regex Rule` referencing a constant field and its `@Regex` annotation.
+6. If the class is an `enum` type, it must contain one or more constant fields;
+   each field must contain exactly one annotation that's convertible to
+   an `@org.rekex.spec.Regex` through AnnoMacro.
+   The grammar rule for the `enum` type is an *Alternation Rule*, with
+   each subrule as a `Regex Rule` referencing a constant field and its `@Regex` annotation.
   
-  > It's possible that ctors are declared in the body of an enum type, 
-  > in which case the previous clause precedes this clause.
+   > It's possible that ctors are declared in the body of an enum type, 
+   > in which case the previous clause precedes this clause.
 
-- If the class is annotated with `@org.rekex.spec.Permits`,
-  invoke subprocedure *derive_from_subclass_list*, with `value` of the `@Permits` annotation.
+7. If the class is annotated with `@org.rekex.spec.Permits`,
+   invoke subprocedure *derive_from_subclass_list*, with `value` of the `@Permits` annotation.
   
-- If the class is a `sealed` type,
-  invoke subprocedure *derive_from_subclass_list*, with classes in the `permits` clause.
+8. If the class is a `sealed` type,
+   invoke subprocedure *derive_from_subclass_list*, with classes in the `permits` clause.
   
-- If the class contains exactly one public constructor, 
-  and it contains at least one constructor parameter,
-  invoke subprocedure *derive_from_ctor_list* with the constructor as the only ctor.
+9. If the class contains exactly one public constructor, 
+   and it contains at least one constructor parameter,
+   invoke subprocedure *derive_from_ctor_list* with the constructor as the only ctor.
+
+Summary: to search for ctors for a non-special datatype, 
+first search the ctor catalog (1),
+then search the body of the datatype (5),
+then search subtypes of the datatype (7, 8),
+and finally, use the canonical constructor of the datatype (9).
   
 ### subprocedures
 
@@ -134,8 +139,9 @@ from following procedures, whichever succeeds first
     
 - `derive_from_subclass_list(targetType, subclasses)`
   - Order the subclasses. If they are specified by a `@Permits` annotation
-    in a `Class<?>[]`, the order is apparent.
-    Otherwise, subclasses are ordered by their line numbers in the source file.
+    in a `Class<?>[]`, they are ordered by their array indices.
+    Otherwise, subclasses are ordered by their line numbers in the source file,
+    if they are defined in the same source file.
   - For each subclass `Cj<Ti>` with with 0 or more type parameters `{Ti}`,
     there must exist a unique substitution `{Ti:=Ai}`,
     such that the parameterized type `Cj<Ai>` is a subtype of the target type. 

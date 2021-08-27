@@ -20,8 +20,11 @@ public class GrammarGood4Test extends GrammarTestBase
     @Permits({A1.class, A2.class})
     public interface A
     {
-        @Ctor public static A a1(@Ch("1")char c){ return null; }
-        @Ctor public static A a2(@Ch("2")char c){ return null; }
+        @Ctor public static
+        A a1(@Ch("1")char c){ return null; }
+
+        static
+        A a2(@Ch("2")char c){ return null; }
     }
     public record A1(@Ch("1")char c) implements A{}
     public record A2(@Ch("2")char c) implements A{}

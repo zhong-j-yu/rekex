@@ -35,7 +35,7 @@ public class PegParserF4Test extends PegParserTestBase
     }
 
     {
-        initParsers(Foo.class, null);
+        initParsers(Foo.class);
     }
 
     @Test

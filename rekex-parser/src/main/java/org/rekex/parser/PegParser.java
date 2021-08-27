@@ -18,7 +18,7 @@ public interface PegParser<T>
     {
         return new PegParserBuilder()
             .rootType(rootClass)
-            .parser();
+            .build();
     }
 
     /**

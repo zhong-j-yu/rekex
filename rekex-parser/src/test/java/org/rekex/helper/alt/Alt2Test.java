@@ -19,7 +19,7 @@ public class Alt2Test extends PegParserTestBase
 
     {
         //generateJavaHere=true;
-        initParsers(Foo.class, null);
+        initParsers(Foo.class);
     }
 
     @Test

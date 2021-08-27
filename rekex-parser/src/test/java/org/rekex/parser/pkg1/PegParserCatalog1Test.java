@@ -6,7 +6,7 @@ import org.rekex.helper.anno.Ch;
 import org.rekex.parser.PegParserTestBase;
 import org.rekex.spec.Ctor;
 
-public class PegParserCatalogTest extends PegParserTestBase
+public class PegParserCatalog1Test extends PegParserTestBase
 {
     public sealed interface Foo{}
     public record FooA() implements Foo{}
@@ -16,14 +16,17 @@ public class PegParserCatalogTest extends PegParserTestBase
 
     public static class CatalogClass
     {
-        @Ctor public static FooA fooA(@Ch("A") char c){ return new FooA(); }
-        @Ctor
-        public static FooB fooB(@Ch("B") char c){ return new FooB(); }
+        // all ctors are static; catalog instance can be null.
+        @Ctor public static
+        FooA fooA(@Ch("A") char c){ return new FooA(); }
+
+        public static
+        FooB fooB(@Ch("B") char c){ return new FooB(); }
     }
 
     {
         //generateJavaHere=true;
-        initParsers(ClassType.of(Bar.class), CatalogClass.class);
+        initParsers(ClassType.of(Bar.class), CatalogClass.class, null);
     }
 
     public enum E{ A, B }

@@ -10,5 +10,7 @@ public sealed interface Instantiator
 
     record StaticMethod(Method method) implements Instantiator{}
 
+    record InstanceMethod(Method method) implements Instantiator{}
+
     record StaticField(Field field) implements Instantiator{}
 }

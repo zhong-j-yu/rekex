@@ -12,7 +12,7 @@ public class OneOrMoreTest extends PegParserTestBase
     ){}
 
     {
-        initParsers(Foo.class, null);
+        initParsers(Foo.class);
     }
 
     @Test

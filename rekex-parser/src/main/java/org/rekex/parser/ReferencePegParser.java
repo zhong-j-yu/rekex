@@ -28,19 +28,21 @@ public class ReferencePegParser<T> implements PegParser<T>
 {
     final Grammar grammar;
     final AnnoType rootType;
+    final Object catalog;
 
-    public ReferencePegParser(Grammar grammar, AnnoType rootType)
+    public ReferencePegParser(Grammar grammar, AnnoType rootType, Object catalogInstance)
     {
         this.grammar = grammar;
         this.rootType = rootType;
+        this.catalog = catalogInstance;
     }
 
-    public static <T> ReferencePegParser<T> of(AnnoType rootType, Class<?> ctorCatalog)
+    public static <T> ReferencePegParser<T> of(AnnoType rootType, Class<?> catalogClass, Object catalogInstance)
     {
         try
         {
-            var grammar = Grammar.deriveFrom(List.of(rootType), ctorCatalog);
-            return new ReferencePegParser<>(grammar, rootType);
+            var grammar = Grammar.deriveFrom(List.of(rootType), catalogClass);
+            return new ReferencePegParser<>(grammar, rootType, catalogInstance);
         }
         catch (Exception exception)
         {
@@ -353,7 +355,7 @@ public class ReferencePegParser<T> implements PegParser<T>
     // ==========================================================================================
 
     // caller should treat IllegalArgumentException as Fail
-    static Object tryInstantiate(int fatalPos, Path path, Instantiator itor, Object... args)
+    Object tryInstantiate(int fatalPos, Path path, Instantiator itor, Object... args)
         throws IllegalArgumentException, FatalEx
     {
         try
@@ -368,6 +370,11 @@ public class ReferencePegParser<T> implements PegParser<T>
             {
                 x.method().setAccessible(true);
                 obj = x.method().invoke(null, args);
+            }
+            else if(itor instanceof Instantiator.InstanceMethod x)
+            {
+                x.method().setAccessible(true);
+                obj = x.method().invoke(catalog, args);
             }
             else if(itor instanceof Instantiator.StaticField x)
             {

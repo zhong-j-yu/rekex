@@ -5,7 +5,6 @@ import org.rekex.helper.anno.Ch;
 import org.rekex.helper.datatype.SepBy1;
 import org.rekex.parser.PegParser;
 import org.rekex.parser.PegParserBuilder;
-import org.rekex.spec.Ctor;
 import org.rekex.spec.Regex;
 
 import java.util.function.Function;
@@ -23,30 +22,26 @@ public interface ExampleParser_Calculator3
 
     class RulesCatalog
     {
-        @Ctor public static
-        Expr expr(SepBy1<Term, @Ch("+-")String> term_ops)
+        public Expr expr(SepBy1<Term, @Ch("+-")String> term_ops)
         {
             int val = term_ops.map(Term::val)
                 .reduce(x->op->y->eval(x, op, y));
             return new Expr(val);
         }
 
-        @Ctor public static
-        Term term(SepBy1<Factor, @Ch("*/")String> fac_ops)
+        public Term term(SepBy1<Factor, @Ch("*/")String> fac_ops)
         {
             int val = fac_ops.map(Factor::val)
                 .reduce(x->op->y->eval(x, op, y));
             return new Term(val);
         }
 
-        @Ctor public static
-        Factor parens(@Ch("(")char lp, Expr expr, @Ch(")")char rp)
+        public Factor parens(@Ch("(")char lp, Expr expr, @Ch(")")char rp)
         {
             return new Factor(expr.val);
         }
 
-        @Ctor public static
-        Factor num(@Regex("[0-9]+") String str)
+        public Factor num(@Regex("[0-9]+") String str)
         {
             return new Factor(Integer.parseInt(str));
         }
@@ -64,8 +59,8 @@ public interface ExampleParser_Calculator3
     {
         return new PegParserBuilder()
             .rootType(Expr.class)
-            .ctorCatalog(RulesCatalog.class)
-            .parser();
+            .catalogClass(RulesCatalog.class)
+            .build(new RulesCatalog());
     }
     public static Function<Expr,Integer> eval()
     {

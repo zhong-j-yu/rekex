@@ -76,19 +76,22 @@ the declaration order of these types should be consistent with the order require
 Preferably they are nested in a top level `public interface`, so that they are implicitly `public` as well;
 this document assumes that datatypes are implicitly `public`.
 
-Note that the `permits` clause can be omitted if all subtypes are declared in the same `.java` file.
+> Note that the `permits` clause can be omitted if the parent type and 
+> all subtypes are declared in the same `.java` file.
 
 #### @Permits
 
 If it's not possible to implicitly order the subtypes according to the previous section
 (in which case Rekex will report an error), or if such ordering is deemed unreliable,
-you can use `@Permits` to list the subtypes in an explicit order
+you can use `@Permits` to list the subtypes in an explicit order.
 
     @Permits({JsonObject.class, JsonArray.class, JsonPrimitive.class})
     interface JsonValue{}
 
-The parent type is not required be `sealed` if it's annotated with `@Permits`. 
+The parent type is not required be `sealed` if it's annotated with `@Permits`.
 
+> The best practice is probably to define all types in one `.java` file,
+> omit the `permits` clause, list subtypes in `@Permits`.
 
 ## Concatenation Rule as Constructor
 
@@ -205,7 +208,7 @@ The datatype `Foo` corresponds to an alternation rule of two subrules,
 each is a concatenation rule derived from the ctor.
 In this example we list all syntactic rules for `Foo` in the body of `Foo`, 
 instead of in different subtypes.
-It is also possible to hoist ctors to a central "ctor catalog"
+It is also possible to hoist ctors to a central "ctor catalog" class
 which we will discuss later.
 
 A datatype having only one ctor is a special case of this section,
@@ -298,12 +301,12 @@ With this mechanism, Rekex ships with a few generic helper datatypes.
 They are not native to Rekex core, and you can easily define your own.
 The helper datatypes include
 
-- `Either<A,B>` - matches either A or B, as ad-hoc union type. 
+- `Either<A,B>` - matches either A or B, as an ad-hoc sum type. 
     > We don't always want to, and sometimes we cannot,
       impose a common supertype for A and B. 
       `Either<A,B>` is a quick and direct way to express rule `A|B`
-- `Alt2<A,B>` etc. - similar to `Either` but with more arities.
-- `Seq2<A,B>` etc. - ad-hoc concatenation of hetero types
+- `Alt2<A,B>` etc. - ad-hoc sum types
+- `Seq2<A,B>` etc. - ad-hoc product types
 - `Opt<E>` - optionally matches E, i.e. `E?`
 - `OneOrMore<E>` - maches E one or more times, i.e. `E+`
 - `SepBy<T,S>` - zero or more `T`, separated by `S`, i.e. `(T (S T)*)?`
@@ -496,7 +499,7 @@ For more options of how a parser is built, use
         .className("MyJsonParser")
         .outDirForJava(Paths.get("src/main/java"));
 
-    PegParser<JsonValue> parser = builder.parser();
+    PegParser<JsonValue> parser = builder.build();
 
 We can print a text version of the grammar for inspection
 
@@ -575,31 +578,36 @@ Positions in the input can be translated into line and column numbers by `LineCo
 
 In previous examples, ctors of a datatype are declared in the body of the datatype.
 In some cases, we don't want to, or cannot, add those methods there. 
-Instead, we can declare ctors in a central class, the "ctor catalog".
+Instead, we can declare ctors in a central class, the "ctor catalog" class.
 Another reason to do this is to place all syntax rules in one place,
 so that it's easier to review the grammar.
 
-    public interface CtorCatalog 
+    public class CtorCatalog 
     {
-        @Ctor public static   FooA fooA(...){...}
-        @Ctor public static   FooB fooB(...){...}
+        public FooA fooA(...){...}
+        public FooB fooB(...){...}
 
-        @Ctor public static   Bar bar(List<Foo> foos){...}
+        public Bar bar(List<Foo> foos){...}
         ...
     }
 
     PegParser<Bar> parser = new PegParserBuilder()
         .rootType(Bar.class)
-        .ctorCatalog(CtorCatalog.class)
-        .parser();
+        .catalogClass(CtorCatalog.class)
+        .build(new CtorCatalog());
 
-When the builder tries to derive a grammar rule for a datatype,
-it first searches the ctor catalog; if there are one or more ctors
-that return a subtype of the datatype, they are used to create 
-an alternation rule for the datatype. 
-Otherwise, ctors are searched in the class body of the datatype; 
-if not found there, ctors are searched in the subtypes.
+All `public` methods decalred in the catalog class are considered ctors. 
+Do not declare public methods that are not intended as ctors.
+`@Ctor` and `static` are allowed, but not required.
 
+An instance of the catalog must be provided to the parser constructor.
+The instance may be invoked concurrently and must be thread-safe.
+You may have different instances to provide different runtime behaviors of ctors.
+
+To find the ctors for a datatype, Rekex first searches the catalog for ctors
+with a compatible return type.
+If not found, Rekex searches the class body of the datatype.
+If not found there either, Rekex searches subtypes of the datatype.
 
 ## References
 

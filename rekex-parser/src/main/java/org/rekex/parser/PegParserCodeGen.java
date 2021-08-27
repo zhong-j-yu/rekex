@@ -50,8 +50,19 @@ class PegParserCodeGen
     {
         Object typeArg = typeStr( (rootType instanceof PrimitiveType pt) ? pt.boxed() : rootType );
 
-        maker.fileHeader(packageName, lazy(this::importLines), className, typeArg,
+        maker.fileHeader1(packageName, lazy(this::importLines), className, typeArg,
             annoTypeStr(rootType), grammar.typeToId().get(rootType));
+
+        var catalogClass = grammar.catalogClass()!=null
+            ? classStr(grammar.catalogClass())
+            : classStr(java.lang.Object.class);
+        maker.fileHeader2(catalogClass);
+        if(grammar.catalogClass()==null)
+            maker.fileHeader2A(className);
+        else
+            maker.fileHeader2B(className, catalogClass);
+
+        maker.fileHeader3(typeArg, catalogClass);
 
         maker.matchAnyRuleIdHeader();
         for(var rule : grammar.idToRule())
@@ -206,6 +217,13 @@ class PegParserCodeGen
         {
             maker.instantiateStaticMethod(classStr(m.method().getDeclaringClass()), m.method().getName(), args);
         }
+        else if(rule.instantiator() instanceof Instantiator.InstanceMethod m)
+        {
+            maker.instantiateInstanceMethod(m.method().getName(), args);
+        }
+        else
+            throw new AssertionError();
+
         maker.instantiateFooter();
 
         maker.matchConcatFooter();

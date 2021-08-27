@@ -28,7 +28,7 @@ public class AltNTest extends PegParserTestBase
     ){}
 
     {
-        initParsers(Foo.class, null);
+        initParsers(Foo.class);
     }
 
     @Test

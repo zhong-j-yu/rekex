@@ -17,7 +17,7 @@ public class PegParser2BTest extends PegParserTestBase
 
     {
         //generateJavaHere=true;
-        initParsers(Foo.class, null);
+        initParsers(Foo.class);
     }
 
     @Test

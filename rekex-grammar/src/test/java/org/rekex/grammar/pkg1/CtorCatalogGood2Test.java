@@ -23,7 +23,7 @@ public class CtorCatalogGood2Test extends GrammarTestBase
         return bar+bar;
     }
 
-    @Ctor public static
+    public
     @N("bar")char bar(@Ch("bar")char ch)
     {
         return ch;

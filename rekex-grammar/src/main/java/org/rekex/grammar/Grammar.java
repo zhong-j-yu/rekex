@@ -3,42 +3,20 @@ package org.rekex.grammar;
 import org.rekex.annotype.AnnoType;
 import org.rekex.common_util.SwitchOnType;
 
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Function;
 
 /**
  * A grammar is a collection of grammar rules.
  */
-public class Grammar
+public record Grammar(
+    List<GrammarRule> idToRule,
+    Map<AnnoType, Integer> typeToId,
+    Class<?> catalogClass,
+    boolean requiresCatalogInstance
+)
 {
-    final List<GrammarRule> idToRule;
-    final Map<AnnoType, Integer> typeToId;
-
-    Grammar(List<GrammarRule> idToRule, Map<AnnoType, Integer> typeToId)
-    {
-        this.idToRule = idToRule;
-        this.typeToId = typeToId;
-    }
-
-    /**
-     * All rules of this grammar.
-     * Ids of rules are consecutive from 0 to n-1,
-     * consistent with their index in the returned List.
-     * Therefore `idToRule().get(ruleId)` returns the rule with the ruleId.
-     */
-    public List<GrammarRule> idToRule()
-    {
-        return idToRule;
-    }
-
-    /**
-     * Return a mapping from datatype to rule id.
-     */
-    public Map<AnnoType, Integer> typeToId()
-    {
-        return typeToId;
-    }
-
     /**
      * Return a textual description of the grammar rules.
      */
@@ -50,13 +28,13 @@ public class Grammar
     }
 
     /**
-     * Derive a grammar, starting from the given datatypes, and optionally with a ctor catalog.
+     * Derive a grammar, starting from the given datatypes, and optionally with a ctor catalog class.
      */
-    public static Grammar deriveFrom(List<AnnoType> types, Class<?> ctorCatalog)
+    public static Grammar deriveFrom(List<AnnoType> types, Class<?> catalogClass)
     {
         try
         {
-            return deriveFromX(types, ctorCatalog);
+            return deriveFromX(types, catalogClass);
         }
         catch (Exception exception)
         {
@@ -64,12 +42,12 @@ public class Grammar
         }
     }
 
-    static Grammar deriveFromX(List<AnnoType> types, Class<?> ctorCatalog) throws Exception
+    static Grammar deriveFromX(List<AnnoType> types, Class<?> catalogClass) throws Exception
     {
         GrammarBuilder gb = new GrammarBuilder();
 
-        if(ctorCatalog!=null)
-            gb.setCtorCatalog(ctorCatalog);
+        if(catalogClass!=null)
+            gb.setCatalogClass(catalogClass);
 
         ArrayList<Integer> rootIds = new ArrayList<>();
         for(var type : types)
@@ -125,7 +103,12 @@ public class Grammar
         gb.typeToId.forEach((type,id)->
             new_typeToId.put(type, idMap[id]));
 
-        return new Grammar(new_idToRule, new_typeToId);
+        boolean requiresCatalogInstance = catalogClass != null &&
+            gb.allCtorMethodsInCatalog.stream().anyMatch(
+                method -> !Modifier.isStatic(method.getModifiers())
+        );
+
+        return new Grammar(new_idToRule, new_typeToId, catalogClass, requiresCatalogInstance);
     }
 
 

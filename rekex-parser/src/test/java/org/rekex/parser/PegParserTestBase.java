@@ -19,17 +19,16 @@ public class PegParserTestBase
 
     protected List<PegParser<?>> parsers;
 
-    protected void initParsers(Class<?> rootClass, Class<?> ctorCatalog)
+    protected void initParsers(Class<?> rootClass)
     {
-        var type = ClassType.of(rootClass);
-        initParsers(type, ctorCatalog);
+        initParsers(ClassType.of(rootClass), null, null);
     }
-    protected void initParsers(AnnoType rootType, Class<?> ctorCatalog)
+    protected void initParsers(AnnoType rootType, Class<?> catalogClass, Object catalog)
     {
         var builder = new PegParserBuilder()
             .logger(msg->{})
             .rootType(rootType)
-            .ctorCatalog(ctorCatalog);
+            .catalogClass(catalogClass);
 
         if(generateJavaHere) // for dev time only
         {
@@ -52,9 +51,9 @@ public class PegParserTestBase
             }
         }
 
-        PegParser<?> parser2 = builder.parser();
+        PegParser<?> parser2 = builder.build(catalog);
 
-        PegParser<?> parser1 = ReferencePegParser.of(rootType, ctorCatalog);
+        PegParser<?> parser1 = ReferencePegParser.of(rootType, catalogClass, catalog);
 
         this.parsers = List.of(parser1, parser2);
 

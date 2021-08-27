@@ -63,7 +63,7 @@ An instance of the class must be provided to PegParserBuilder,
 or to the constructor of the generated parser code.
 Different instances may have different behaviors in the ctors.
 
-The first problem is that, builder.parser() loads the parser class
+The only problem is that, builder.build() loads the parser class
 in its own class loader, preventing it from accessing those methods in CtorCatalog.
 https://docs.oracle.com/javase/specs/jvms/se16/html/jvms-5.html#jvms-5.4.4
 Two classes are not in the same runtime package if loaded from different class loaders.
@@ -97,8 +97,16 @@ Solution 4: change the methods to public at class loading time with agent
 
 Current decision:
 
-Keep `@Ctor public static` as ctor marker in catalog.
-Not too big a deal.
-Might be nice to see explicit `@Ctor` markers.
-Simpler. Consistent with ctors in datatypes.
-`public` can be omitted on interface static methods.
+Require that ctors in catalog be `public`
+
+    public A a(B b, C c){...}
+
+Not too bad. `public` might be a good lead that it's a method definition.
+
+If the catalog is an `interface`, methods are public implicitly. 3 options:
+
+    default A a(B b, C c){...}
+
+    static A a(B b, C c){...}
+
+    @Ctor(1) A(B b, C c); // no body; need explicit ordering.

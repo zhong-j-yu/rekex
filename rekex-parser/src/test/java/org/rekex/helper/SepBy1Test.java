@@ -21,7 +21,7 @@ public class SepBy1Test extends PegParserTestBase
     ){}
 
     {
-        initParsers(Foo.class, null);
+        initParsers(Foo.class);
     }
 
     @Test

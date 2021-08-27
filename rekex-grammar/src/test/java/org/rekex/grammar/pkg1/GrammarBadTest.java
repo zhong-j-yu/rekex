@@ -84,10 +84,6 @@ public class GrammarBadTest extends GrammarTestBase
     {
         @Ctor static CtorNotPublic ctor(){ return null; }
     }
-    public static class CtorNotStatic
-    {
-        @Ctor public CtorNotStatic ctor(){ return null; }
-    }
     public static class CtorWrongType
     {
         @Ctor public static
@@ -100,7 +96,7 @@ public class GrammarBadTest extends GrammarTestBase
     {
         Exception ex = null;
 
-        ex=failOn(Foo.class, EmptyCatalog.class, "no @Ctor");
+        ex=failOn(Foo.class, EmptyCatalog.class, "no ctor");
 
         Class<?>[] disallowed = {int.class, char.class, boolean.class,
             Object.class, Class.class, String.class, Character.class};
@@ -148,9 +144,7 @@ public class GrammarBadTest extends GrammarTestBase
         ex=failOn(PermitsIncomplete.class, "inconsistent");
 
         ex=failOn(CtorNotPublic.class, CtorNotPublic.class, "public");
-        ex=failOn(CtorNotStatic.class, CtorNotStatic.class, "static");
         ex=failOn(CtorNotPublic.class, "public");
-        ex=failOn(CtorNotStatic.class, "static");
 
         ex=failOn(CtorWrongType.class, "not a subtype of");
 

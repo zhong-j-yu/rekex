@@ -17,7 +17,7 @@ public class PegParser1Test extends PegParserTestBase
         var anno = AnnoBuilder.build(Ch.class, "abc");
         var type = new PrimitiveType(Set.of(anno), char.class);
         //generateJavaHere=true;
-        initParsers(type, null);
+        initParsers(type, null, null);
         //parsers = List.of(new PegParser1Test__Gen());
     }
 

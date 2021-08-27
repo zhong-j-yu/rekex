@@ -25,22 +25,22 @@ class GrammarBuilder
     // only for any datatype that can be a start symbol.
     HashMap<AnnoType, Integer> typeToId = new HashMap<>();
 
-    Class<?> ctorCatalog = null;
-    List<Method> allCtorMethodsInCatalog;
+    Class<?> catalogClass = null;
+    List<Method> allCtorMethodsInCatalog = null;
 
     final AnnoMacro.Resolver annoResolver = new AnnoMacro.Resolver();
 
-    void setCtorCatalog(Class<?> ctorCatalog) throws Exception
+    void setCatalogClass(Class<?> catalogClass) throws Exception
     {
-        if(ctorCatalog ==null)
+        if(catalogClass ==null)
             throw new NullPointerException();
-        checkClassAccessible(ctorCatalog);
-        if(this.ctorCatalog !=null)
-            throw new Exception("only one ctorCatalog is supported");
-        allCtorMethodsInCatalog = getAllCtorMethodsInCatalog(ctorCatalog);
+        checkClassAccessible(catalogClass);
+        if(this.catalogClass !=null)
+            throw new Exception("only one catalogClass is supported");
+        allCtorMethodsInCatalog = getAllCtorMethodsInCatalog(catalogClass);
         if(allCtorMethodsInCatalog.isEmpty())
-            throw new Exception("no @Ctor methods found in "+ ctorCatalog);
-        this.ctorCatalog = ctorCatalog;
+            throw new Exception("no ctors found in "+ catalogClass);
+        this.catalogClass = catalogClass;
     }
 
     // this can be called recursively
@@ -81,7 +81,7 @@ class GrammarBuilder
         if(!isAllowedTargetType(type))
             throw new Exception("disallowed rule datatype: "+str(type));
 
-        if(ctorCatalog !=null)
+        if(catalogClass !=null)
         {
             var ctorList = findCtorInCatalog(type);
             if(!ctorList.isEmpty())
@@ -432,7 +432,9 @@ class GrammarBuilder
         if(ctor instanceof Constructor<?> constructor)
             instantiator = new Instantiator.NewInstance(constructor);
         else if(ctor instanceof Method method)
-            instantiator = new Instantiator.StaticMethod(method);
+            instantiator = Modifier.isStatic(method.getModifiers())
+                ? new Instantiator.StaticMethod(method)
+                : new Instantiator.InstanceMethod(method);
         else
             throw new AssertionError();
 
@@ -542,31 +544,60 @@ class GrammarBuilder
 
         return PkgUtil.orderCtors(ctorList); // throws
     }
-    List<Method> getAllCtorMethodsInCatalog(Class<?> ctorCatalog) throws Exception
+    List<Method> getAllCtorMethodsInCatalog(Class<?> catalogClass) throws Exception
     {
         try
         {
-            return getAllCtorMethodsInCatalogEx(ctorCatalog);
+            return getAllCtorMethodsInCatalogEx(catalogClass);
         }
         catch (Exception e)
         {
-            throw new Exception("error finding ctors in rule catalog: "+ctorCatalog, e);
+            throw new Exception("error finding ctors in rule catalog: "+catalogClass, e);
         }
     }
-    List<Method> getAllCtorMethodsInCatalogEx(Class<?> ctorCatalog) throws Exception
+    List<Method> getAllCtorMethodsInCatalogEx(Class<?> catalogClass) throws Exception
     {
-        ArrayList<Method> ctorList = new ArrayList<>();
-        for(var ctor : ctorCatalog.getDeclaredMethods()) // no inherited methods?
-        {
-            // @Ctor public static
-            if(!ctor.isAnnotationPresent(Ctor.class))
-                continue;
-            if(!Modifier.isPublic(ctor.getModifiers()))
-                throw new Exception("ctor must be public: "+ctor);
-            if(!Modifier.isStatic(ctor.getModifiers()))
-                throw new Exception("ctor must be static: "+ctor);
+        // all public methods declared in the class
+        // no inherited methods from parent types
+        // can be static or non-static
+        // can be marked by @Ctor or not
+        //
+        // it may a common case that previously a ctor is defined inside a datatype,
+        // which has mandatory `@Ctor public static`; later the ctor is moved to the catalog,
+        // with `@Ctor` and `static` copied as well, even though they are no longer mandatory.
 
-            ctorList.add(ctor);
+        // for `record` class, exclude implicitly declared methods
+        record Sig(String name, List<Class<?>> paramTypes) {
+            static Sig of(Method method){
+                return new Sig(method.getName(), List.of(method.getParameterTypes()));
+            }
+        }
+        HashSet<Sig> excluded = new HashSet<>();
+        if(catalogClass.isRecord())
+        {
+            // https://docs.oracle.com/javase/specs/jls/se16/html/jls-8.html#jls-8.10.3
+            //   all the abstract methods declared in class Record
+            for(var method: Record.class.getDeclaredMethods())
+                if(Modifier.isAbstract(method.getModifiers()))
+                    excluded.add(Sig.of(method));
+            for(var component : catalogClass.getRecordComponents())
+                excluded.add(Sig.of(component.getAccessor()));
+        }
+
+        ArrayList<Method> ctorList = new ArrayList<>();
+        for(var method : catalogClass.getDeclaredMethods())
+        {
+            if(excluded.contains(Sig.of(method)))
+                continue;
+            if(method.isSynthetic()) // ?
+                continue;
+            if(!Modifier.isPublic(method.getModifiers()))
+            {
+                if(method.getAnnotation(Ctor.class)!=null) // marked as ctor, yet not public
+                    throw new Exception("ctor must be public: "+method);
+                continue;
+            }
+            ctorList.add(method);
         }
         return ctorList;
     }

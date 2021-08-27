@@ -26,11 +26,11 @@ public class GrammarTestBase
     {
         return derive(clazz, null);
     }
-    public static Grammar derive(Class<?> clazz, Class<?> ctorCatalog) throws Exception
+    public static Grammar derive(Class<?> clazz, Class<?> catalogClass) throws Exception
     {
 
         var clazzType = typeOf(clazz);
-        return Grammar.deriveFrom(List.of(clazzType), ctorCatalog);
+        return Grammar.deriveFrom(List.of(clazzType), catalogClass);
     }
     public static void dump(Grammar grammar)
     {
@@ -41,10 +41,10 @@ public class GrammarTestBase
     {
         return failOn(clazz, null, msg);
     }
-    public static Exception failOn(Class<?> clazz, Class<?> ctorCatalog, String msg)
+    public static Exception failOn(Class<?> clazz, Class<?> catalogClass, String msg)
     {
         Exception ex = assertThrows(Exception.class, ()->{
-            var grammar = derive(clazz, ctorCatalog);
+            var grammar = derive(clazz, catalogClass);
             dump(grammar); // should not reach here
         });
         if(ex==null)

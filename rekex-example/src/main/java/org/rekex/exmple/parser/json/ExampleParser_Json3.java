@@ -9,7 +9,6 @@ import org.rekex.helper.anno.Ch;
 import org.rekex.helper.datatype.SepBy;
 import org.rekex.parser.PegParser;
 import org.rekex.parser.PegParserBuilder;
-import org.rekex.spec.Ctor;
 import org.rekex.spec.Regex;
 
 import java.lang.annotation.*;
@@ -43,7 +42,7 @@ public interface ExampleParser_Json3
 
     // rules --------------------------------------------------------
 
-    interface RulesCatalog
+    public class RulesCatalog
     {
         // to strip leading whitespaces, it's simpler to introduce
         //    a wrapper type Input(Object) as the root type.
@@ -51,10 +50,9 @@ public interface ExampleParser_Json3
         // the root type is `@Input()Object`, not too friendly to use.
 
         @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-        @interface Input{}
+        public @interface Input{}
 
-        @Ctor public static
-        @Input()Object input(OptWs leadingWs, @JV Object value)
+        public @Input()Object input(OptWs leadingWs, @JV Object value)
         {
             return value;
         }
@@ -64,10 +62,9 @@ public interface ExampleParser_Json3
 
 
         @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-        @interface JV{}
+        public @interface JV{}
 
-        @Ctor public static
-        @JV Map<String, Object> object(@Token("{") char PL, SepBy<Member, Comma> members, @Token("}") char PR)
+        public @JV Map<String, Object> object(@Token("{") char PL, SepBy<Member, Comma> members, @Token("}") char PR)
         {
             // the following code doesn't work because the API doesn't allow `null` in value
             //   return members.values().stream().collect(Collectors.toMap(Member::name, Member::value)); // throws on duplicate keys
@@ -77,40 +74,34 @@ public interface ExampleParser_Json3
             return map;
         }
 
-        record Member(String name, Object value){}
+        public record Member(String name, Object value){}
 
-        @Ctor public static
-        Member member(@JV String name, @Token(":") char COLON, @JV Object value)
+        public Member member(@JV String name, @Token(":") char COLON, @JV Object value)
         {
             return new Member(name, value);
         }
 
-        @Ctor public static
-        @JV List<Object> array(@Token("[") char PL, SepBy<@JV Object, Comma> values, @Token("]") char PR)
+        public @JV List<Object> array(@Token("[") char PL, SepBy<@JV Object, Comma> values, @Token("]") char PR)
         {
             return values.values();
         }
 
-        @Ctor public static
-        @JV Boolean trueV(@Token({"true"}) String str)
+        public @JV Boolean trueV(@Token({"true"}) String str)
         {
             return Boolean.TRUE;
         }
 
-        @Ctor public static
-        @JV Boolean falseV(@Token({"false"}) String str)
+        public @JV Boolean falseV(@Token({"false"}) String str)
         {
             return Boolean.FALSE;
         }
 
-        @Ctor public static
-        @JV Object nullV(@Token("null") String str)
+        public @JV Object nullV(@Token("null") String str)
         {
             return null;
         }
 
-        @Ctor public static
-        @JV BigDecimal number(@RegexNumber String str, OptWs trailingWs)
+        public @JV BigDecimal number(@RegexNumber String str, OptWs trailingWs)
         {
             return new BigDecimal(str);
         }
@@ -122,16 +113,14 @@ public interface ExampleParser_Json3
 
         // `@JC int` to match a logical json character in strings
         @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-        @interface JC{}
+        public @interface JC{}
 
-        @Ctor public static
-        @JV String string(@Ch(QT) char QL, @JC int[] chars, @Ch(QT) char QR, OptWs trailingWs)
+        public @JV String string(@Ch(QT) char QL, @JC int[] chars, @Ch(QT) char QR, OptWs trailingWs)
         {
             return new String(chars, 0, chars.length);
         }
 
-        @Ctor public static
-        @JC int char1(@Ch(range={0x20, 0x10FFFF}, except=BS+QT) int c)
+        public @JC int char1(@Ch(range={0x20, 0x10FFFF}, except=BS+QT) int c)
         {
             return c;
         }
@@ -139,22 +128,20 @@ public interface ExampleParser_Json3
         final static String escN = BS+QT+"/bfnrt";
         final static String escV = BS+QT+"/\b\f\n\r\t";
 
-        @Ctor public static
-        @JC int escC(@Ch(BS) char BSL, @Ch(escN) char c)
+        public @JC int escC(@Ch(BS) char BSL, @Ch(escN) char c)
         {
             int i = escN.indexOf(c);
             assert i!=-1;
             return escV.charAt(i);
         }
 
-        @Ctor public static
-        @JC int escU(@Ch(BS) char BSL, @Ch("u") char U, @Hex char h1, @Hex char h2, @Hex char h3, @Hex char h4)
+        public @JC int escU(@Ch(BS) char BSL, @Ch("u") char U, @Hex char h1, @Hex char h2, @Hex char h3, @Hex char h4)
         {
             return ( h2i(h1,12) | h2i(h2,8) | h2i(h3,4) | h2i(h4,0) );
         }
 
         @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-        @interface Hex{
+        public @interface Hex{
             AnnoMacro<Hex,Regex> toRegex = thiz->
                 AnnoBuilder.build(Regex.class, "[0-9A-Fa-f]");
         }
@@ -178,8 +165,8 @@ public interface ExampleParser_Json3
 
         return new PegParserBuilder()
             .rootType(type)
-            .ctorCatalog(RulesCatalog.class)
-            .parser();
+            .catalogClass(RulesCatalog.class)
+            .build(new RulesCatalog());
     }
 
     public static void main(String[] args)
