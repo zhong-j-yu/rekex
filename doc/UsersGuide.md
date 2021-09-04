@@ -634,13 +634,15 @@ so that it's easier to review the grammar.
         public Bar bar(List<Foo> foos){...}
         ...
     }
-
+    
+    PegParser<Bar> parser = PegParser.of(Bar.class, CtorCatalog.class, new CtorCatalog());  
+    // or
     PegParser<Bar> parser = new PegParserBuilder()
         .rootType(Bar.class)
         .catalogClass(CtorCatalog.class)
         .build(new CtorCatalog());
 
-All `public` methods decalred in the catalog class are considered ctors. 
+*All `public` methods declared in the catalog class are considered ctors.* 
 Do not declare public methods that are not intended as ctors.
 `@Ctor` and `static` are allowed, but not required.
 

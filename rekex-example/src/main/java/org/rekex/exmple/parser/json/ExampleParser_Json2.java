@@ -195,10 +195,7 @@ public interface ExampleParser_Json2
     // test --------------------------------------------------------
     public static PegParser<Input> parser()
     {
-        return new PegParserBuilder()
-            .rootType(Input.class)
-            .catalogClass(RulesCatalog.class)
-            .build(new RulesCatalog());
+        return PegParser.of(Input.class, RulesCatalog.class, new RulesCatalog());
     }
 
     public static void main(String[] args)

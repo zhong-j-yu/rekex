@@ -22,6 +22,19 @@ public interface PegParser<T>
     }
 
     /**
+     * Create a parser with the root type as the `rootClass`,
+     * using the catalog class and instance.
+     * For more options, see {@link PegParserBuilder}.
+     */
+    public static <T, C> PegParser<T> of(Class<T> rootClass, Class<C> catalogClass, C catalogInstance)
+    {
+        return new PegParserBuilder()
+            .rootType(rootClass)
+            .catalogClass(catalogClass)
+            .build(catalogInstance);
+    }
+
+    /**
      * Equivalent to `parse(chars, 0. chars.length())`
      */
     default ParseResult<T> parse(CharSequence chars)

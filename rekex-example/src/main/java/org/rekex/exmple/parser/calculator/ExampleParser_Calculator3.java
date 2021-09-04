@@ -57,10 +57,7 @@ public interface ExampleParser_Calculator3
 
     public static PegParser<Expr> parser()
     {
-        return new PegParserBuilder()
-            .rootType(Expr.class)
-            .catalogClass(RulesCatalog.class)
-            .build(new RulesCatalog());
+        return PegParser.of(Expr.class, RulesCatalog.class, new RulesCatalog());
     }
     public static Function<Expr,Integer> eval()
     {
