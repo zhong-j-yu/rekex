@@ -20,3 +20,13 @@ If a enum field is annotated with an anno of @Target=Type_USE, it's not clear wh
 Javac allows it, so it appears that it applies on the type of the field.
 But field.getAnnotatedType() does not contain the anno.
 And field.getDeclaredAnnotations() does contain the anno.
+
+
+# @Ctor on constructor
+
+@Ctor is applied mostly to static factory methods in datatype classes.
+
+@Ctor on constructors seems not that useful; we can always use factory methods instead.
+But, for the story telling, it's easier to go
+    canonical constructor -> @Ctor constructor -> @Ctor method -> ctor catalog
+so we keep this feature, allow @Ctor on constructors.

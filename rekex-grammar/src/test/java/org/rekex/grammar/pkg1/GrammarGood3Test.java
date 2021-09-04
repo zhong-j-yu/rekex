@@ -40,10 +40,10 @@ public class GrammarGood3Test extends GrammarTestBase
     }
     public static class Ctor2<T>
     {
-        @Ctor(value =2) public
+        @Ctor(2) public
         Ctor2(T t){ }
 
-        @Ctor(value =1) public static <T>
+        @Ctor(1) public static <T>
         Ctor2<T> b(T t){ return null; }
     }
 
