@@ -38,7 +38,7 @@ Maven dependency:
         <dependency>
             <groupId>org.rekex</groupId>
             <artifactId>rekex-parser</artifactId>
-            <version>1.0.1</version>
+            <version>1.1.0</version>
         </dependency>
 
 ## Alteration Rule as Subtyping
@@ -184,17 +184,6 @@ The first example of `Member` looks so much simpler and nicer than the other two
 Most often it's not a big deal to produce a bloated parse tree first,
 then immediately transform it to a desired form in a followup step.
 
-### Semantic Predicate by IllegalArgumentException
-
-A ctor can throw `IllegalArgumentException` to indicate that the argument list
-does not conform to some semantic requirements; 
-the parser will treat it as a failure of matching this particular rule against the input.
-However, it doesn't necessary stop the parser and fail the whole parsing process; 
-the parser will continue with alternative paths if there are any.
-
-If a ctor throws any other kind of exception, the parser stops immediately
-with a `Fatal` result, with the exception as the cause.
-
 ## Alternative Ctors
 
 Multiple ctors can be declared in a datatype (as constructors or static methods, or both)
@@ -254,6 +243,8 @@ More complex annotated types can be constructed for example
 
 This means a repetition of 0 or more `X`,
 where `X` is a repetition of `Foo` 0 to 3 times.
+
+Array types `E[]` are supported too, gratuitously; `E` can be a primitive type.
 
 Annotations on array types are somewhat strange, 
 see [JLS-9.7.4](https://docs.oracle.com/javase/specs/jls/se16/html/jls-9.html#jls-9.7.4).
@@ -472,6 +463,59 @@ Define a datatype for optional whitespaces and insert it wherever it's allowed.
     record JsonInput(OptWs leadingWs, JsonValue value){}
 
 
+## Semantic Predicate
+
+Some times it is difficult or impossible to express a rule in a syntactic way,
+when we have to resort to Java code to validate the input.
+For example, let's say we need a rule to match *prime numbers*.
+Syntactically, the best we can do is to match zero-or-more digits;
+whether or not it is actually a prime number can only be tested in Java code,
+by a *semantic predicate*.
+
+A ctor can indicate that it contains semantic predicates by declaring 
+possible failure types as exception types in the `throws` clause.
+If an exception of one of those types is thrown when invoking the ctor,
+we say that the ctor fails a semantic predicate.
+
+
+        @Ctor public static 
+        CoolNumber prime(@Regex("[0-9]+")String str) throws SomeException
+        {
+            int num = Integer.parseInt(str);
+            if(!isPrime(num))
+                throw new SomeException("not a prime: " +str);
+            return new CoolNumber(num);
+        }
+
+If a ctor fails a semantic predicate, 
+the corresponding rule fails to match the input.
+However, this is not a fatal error; 
+the parser does not stop immediately; instead,
+alternative rules will be explored if there's any.
+For example, 
+if `prime()` fails the semantic predicate,
+the next ctor for `CoolNumber`  (if there is one) 
+will be tried which may successfully match the input.
+
+A semantic predicate can be considered a *lookbehind* rule
+that tests the arguments to a ctor after they have matched the input.
+                            
+All failure types must be explicitly listed 
+in the `throws` clause, including unchecked exception like`IllegalArgumentException`. 
+
+If a ctor throws an `Exception` that's not declared in the `throws` clause,
+it is "unexpected", and the parser stops immediately
+with a `Fatal` result, with the exception as the cause.
+In the example above, `parseInt(str)` could throw `NumberFormatException`
+for a very long `str`; since the exception type is not declared,
+it would cause a `Fatal` error.
+
+
+If a ctor throws an `Error`, it will not be caught or handled by the parser.
+
+
+
+
 ## PegParser
 
 Once the datatypes are defined, we can create a 
@@ -560,7 +604,7 @@ There are 4 subtypes of
   ```
   
 - `ParseResult.Fatal<?>` - the parser encountered an error. 
-  Often it's because a ctor threw an `Exception` (that's not an `IllegalArgumentException`)
+  Often it's because a ctor threw an `Exception` that's not declared in the `throws` clause,
   which stopped the parser immediately. 
   The result also contains the position and the parse stack when the error occurred.
   ```
@@ -609,6 +653,9 @@ with a compatible return type.
 If not found, Rekex searches the class body of the datatype.
 If not found there either, Rekex searches subtypes of the datatype.
 
+
+
+
 ## References
 
 - [Specification](./Spec.md)
@@ -626,4 +673,4 @@ Please use the [Issue Tracker](https://github.com/zhong-j-yu/rekex/issues).
 
 ----
 *Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a Java job; helps appreciated.*
+I am looking for a job; helps appreciated.*

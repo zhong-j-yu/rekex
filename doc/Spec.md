@@ -162,4 +162,4 @@ and finally, use the canonical constructor of the datatype (9).
 
 ----
 *Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a Java job; helps appreciated.*
+I am looking for a job; helps appreciated.*

@@ -72,7 +72,7 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
         else
         {
             var stack = pathToStack(state.maxFailPath, state.maxFailPath.length);
-            String msg = failMsg(state.maxFailReason, state.maxFailInfo);
+            String msg = failMsg(state.maxFailReason, state.maxFailEx, _DatatypeList.list.get(state.maxFailRuleId));
             return new ParseResult.Fail<>(state.maxFailPos, msg, stack);
         }
     }
@@ -96,7 +96,8 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
         int maxFailPos = -1;
         int[] maxFailPath;
         int maxFailReason;
-        Object maxFailInfo;
+        Exception maxFailEx;
+        int maxFailRuleId;
 
         public _State clone()
         {
@@ -137,14 +138,15 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
             return t;
         }
 
-        _State fail(int position, int reason, Object info, int startReset)
+        _State fail(int position, int reason, Exception ex, int ruleId, int startReset)
         {
             if(position>maxFailPos)
             {
                 maxFailPos = position;
                 maxFailPath = java.util.Arrays.copyOf(path, pathLen);
                 maxFailReason = reason;
-                maxFailInfo = info;
+                maxFailEx = ex;
+                maxFailRuleId = ruleId;
             }
             return fail(startReset);
         }
@@ -157,22 +159,23 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
         }
 
     }
-    static final int failReason_illegal_arg = 0; // info: IllegalArgumentException
+    static final int failReason_predicate = 0;   // info: Exception
     static final int failReason_neg = 1;         // info: subrule ID
     static final int failReason_regex = 2;
     static final int failReason_regex_group = 3;
 
-    static String failMsg(int reason, Object info)
+    static String failMsg(int reason, Exception ex, org.rekex.annotype.AnnoType type)
     {
+        String typeStr = type.toString(false);
         return switch (reason){
-            case failReason_illegal_arg
-                -> "ctor throws "+info;
+            case failReason_predicate
+                -> typeStr + " ctor throws: "+ex;
             case failReason_neg
-                -> "Not<?> failed; input matches subrule";
+                -> typeStr + " failed; input matches subrule";
             case failReason_regex
-                -> "Input does not match regex";
+                -> "Input does not match regex: "+typeStr;
             case failReason_regex_group
-                -> "Input does not match regex group";
+                -> "Input does not match regex group: "+typeStr;
             default -> throw new AssertionError("unexpected reason: "+reason);
         };
     }
@@ -265,11 +268,6 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
     static int ruleId;
     static int subId;
     static int subIndex;
-    static int altId;
-    static int concatId;
-    static int repeatId;
-    static int peekId;
-    static int negId;
 
     //** comment  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  alt
 
@@ -311,14 +309,15 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
             value = TypeName.methodName(args);
             //** template instantiateInstanceMethod(methodName, args) + + + + + + + + + + + + + + + +
             value = state.catalog.methodName(args);
-            //** template instantiateFooter() + + + + + + + + + + + + + + + + + + + +
-        }catch (IllegalArgumentException ex){
-            return state.fail(state.start, failReason_illegal_arg, ex, start0);
+            //** template instantiateEx1(RuntimeException, ruleId) + + + + + + + + + + + + + + + + + + + +
+        }catch (RuntimeException ex){
+            return state.fail(start0, failReason_predicate, ex, ruleId, start0);
+            //** template instantiateEx2() + + + + + + + + + + + + + + + + + + + +
         }catch(Exception ex){
-            throw new _FatalEx(state.start, ex);
+            throw new _FatalEx(start0, ex);
+            //** template matchConcatFooter() + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
         }
         return state.ok(value);
-        //** template matchConcatFooter() + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
     }
 
     //** end
@@ -407,7 +406,7 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
         return state1.ok(new Peek<>(value));
     }
 
-    //** template match_neg(negId, datatypeStr, TypeName, subId)
+    //** template match_neg(negId, ruleId, datatypeStr, TypeName, subId)
     // neg rule for: datatypeStr
     static _State rule_negId(_State state1) throws _FatalEx
     {
@@ -416,7 +415,7 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
         state2 = match(subId, state2, -1);
         if(state2.fail)
             return state1.ok(new TypeName());
-        return state1.fail(state1.start, failReason_neg, subId, state1.start);
+        return state1.fail(state1.start, failReason_neg, null, ruleId, state1.start);
     }
 
     //** comment  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #   regex
@@ -428,12 +427,12 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
         matcher.region(state.start, state.end);
         boolean matched = matcher.lookingAt();
         if(!matched)
-            return state.fail(state.start, failReason_regex, null, state.start);
+            return state.fail(state.start, failReason_regex, null, ruleId, state.start);
 
         state.gStart = matcher.start(group);
         state.gEnd = matcher.end(group);
         if(state.gStart==-1)
-            return state.fail(state.start, failReason_regex_group, null, state.start);
+            return state.fail(state.start, failReason_regex_group, null, ruleId, state.start);
 
         state.start = matcher.end(0); // consume group 0
         return state.ok(null);
@@ -540,7 +539,7 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
             {
                 java.lang.reflect.Field field;
                 try{ field = _DatatypeList.class.getDeclaredField("t_"+id); }
-                catch(Exception ex){ throw new Error(ex); }
+                catch(Exception ex){ ex.printStackTrace(); throw new Error(ex); }
                 var type = org.rekex.annotype.TypeMath.convertFromJlr(field.getAnnotatedType());
                 list.add(type);
             }

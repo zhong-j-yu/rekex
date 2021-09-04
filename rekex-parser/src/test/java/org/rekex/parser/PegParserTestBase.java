@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class PegParserTestBase
 {
     protected boolean generateJavaHere = false;
+    protected boolean dumpJavaSource = false;
     protected boolean dumpResult = false;
     protected boolean dumpGrammar = false;
 
@@ -59,6 +60,9 @@ public class PegParserTestBase
 
         if(dumpGrammar)
             System.out.println(builder.grammar().toText());
+
+        if(dumpJavaSource)
+            System.out.println(builder.generateJavaSource());
     }
 
     protected void matchFull(String input)

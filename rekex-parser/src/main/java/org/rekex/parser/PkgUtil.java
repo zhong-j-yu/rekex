@@ -1,5 +1,7 @@
 package org.rekex.parser;
 
+import org.rekex.grammar.Instantiator;
+
 import javax.tools.*;
 import java.io.File;
 import java.io.StringWriter;
@@ -13,6 +15,45 @@ import java.util.List;
 
 class PkgUtil
 {
+    // if a ctor contains semantic predicates, it must declare failure types
+    // in the `throws` clause. a ctor with semantic predicate is a production rule
+    // with extra constraints unintelligible to the parser; the parser must invoke
+    // the ctor to know whether the rule matches, or whether to try next alternative.
+    //
+    // most ctors are "pure", without semantic predicates;
+    // the parser knows they are pure by looking at the throws clauses.
+    // pure ctors are deterministic to the parser; their invocations can
+    // be delayed till the end of parsing process.
+    // usually a pure ctor will not throw;
+    // but if it does throw, it'll be considered a Fatal error, unrecoverable.
+    static List<Class<? extends Exception>> getDeclaredExceptions(Instantiator ins)
+    {
+        Class<?>[] declared;
+        if(ins instanceof Instantiator.NewInstance m)
+            declared = m.constructor().getExceptionTypes();
+        else if(ins instanceof Instantiator.StaticMethod m)
+            declared = m.method().getExceptionTypes();
+        else if(ins instanceof Instantiator.InstanceMethod m)
+            declared = m.method().getExceptionTypes();
+        else if(ins instanceof Instantiator.StaticField f)
+            declared = new Class<?>[]{};
+        else
+            throw new AssertionError();
+
+        // only subtypes of Exception
+        List<Class<? extends Exception>> list = new ArrayList<>();
+        for(var clazz : declared)
+        {
+            if(Exception.class.isAssignableFrom(clazz))
+                list.add((Class<? extends Exception>)clazz);
+            else if(Error.class.isAssignableFrom(clazz))
+                ;
+            else
+                throw new UnsupportedOperationException("bad throws type: "+clazz+" from "+ins);
+        }
+        return list;
+    }
+
     // compile given .java files, output .class files under outDir.
     static void jc_compile(List<Path> javaFiles, Path outDir, List<String> options) throws Exception
     {

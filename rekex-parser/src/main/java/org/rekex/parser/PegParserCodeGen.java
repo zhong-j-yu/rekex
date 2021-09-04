@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 class PegParserCodeGen
 {
@@ -224,7 +225,24 @@ class PegParserCodeGen
         else
             throw new AssertionError();
 
-        maker.instantiateFooter();
+        var declaredEx = PkgUtil.getDeclaredExceptions(rule.instantiator());
+        referencedClasses.addAll(declaredEx);
+        if(declaredEx.contains(Exception.class))
+        {
+            maker.instantiateEx1(classStr(Exception.class), rule.id());
+        }
+        else if(declaredEx.isEmpty())
+        {
+            maker.instantiateEx2();
+        }
+        else // throws subclasses of Exception
+        {
+            var catchTypeString = lazy(()->
+                declaredEx.stream().map(c->imports.resolve(c)).collect(Collectors.joining(" | "))
+            );
+            maker.instantiateEx1(catchTypeString, rule.id());
+            maker.instantiateEx2();
+        }
 
         maker.matchConcatFooter();
         return null;
@@ -277,7 +295,7 @@ class PegParserCodeGen
         referencedClasses.add(Not.class);
 
         Object datatypeStr = annoTypeStr(rule.datatype());
-        maker.match_neg(rule.id(), datatypeStr, typeStr(rule.datatype()), rule.subRuleId());
+        maker.match_neg(rule.id(), rule.id(), datatypeStr, typeStr(rule.datatype()), rule.subRuleId());
         return null;
     }
 

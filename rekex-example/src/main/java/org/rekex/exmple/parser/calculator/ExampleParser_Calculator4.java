@@ -122,7 +122,7 @@ public interface ExampleParser_Calculator4
                 value *= 10;
             value += digitR.value;
             if(value>Integer.MAX_VALUE)
-                throw new IllegalArgumentException("number too big");
+                throw new NumberFormatException("number too big");
             return new Digits(digitR.count +1, (int)value);
         }
 

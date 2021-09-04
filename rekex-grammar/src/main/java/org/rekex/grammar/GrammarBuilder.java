@@ -258,6 +258,9 @@ class GrammarBuilder
                 return deriveAltSubClasses(id, classType, permits.value());  // ordered
             }
         }
+        // if a class is marked with @Permits, as well as containing @Ctor constructors/methods,
+        // they are conflicting explicit instructions to Rekex.
+        // the @Ctor takes precedence. the @Permits is considered weaker, like a `permits` clause.
 
         // sealed class without @Permits
         if(clazz.isSealed())
@@ -283,6 +286,8 @@ class GrammarBuilder
             // if we are here, we don't know what user wants. give some hints?
             throw new Exception("expecting a single non-default public constructor: "+clazz);
         }
+        // if both 2 previous clauses apply for a class, we search the subtypes, ignore the single constructor.
+        // if the opposite is desired, mark the constructor with @Ctor.
 
     }
 

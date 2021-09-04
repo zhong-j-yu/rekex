@@ -35,15 +35,15 @@ public class PegParser4Test extends PegParserTestBase
         public static class B<T> extends AB<T>
         {}
 
-        @Ctor public static <T> A<T> ctorA(@Ch("A")char a, T t)
+        @Ctor public static <T> A<T> ctorA(@Ch("A")char a, T t) throws IllegalArgumentException
         {
             if(t==XY.x)
                 throw new IllegalArgumentException("invalid combination Ax");
             return new A<>();
         }
-        @Ctor public static <T> B<T> ctorB(@Ch("B")char b, T t) throws Exception
+        @Ctor public static <T> B<T> ctorB(@Ch("B")char b, T t)
         {
-            throw new Exception("fatal error ctorB");
+            throw new RuntimeException("fatal error ctorB");
         }
     }
 
@@ -63,9 +63,9 @@ public class PegParser4Test extends PegParserTestBase
 
         matchFail("xyx?x", 3, 3,3,3,0);
 
-        matchFail("xyxAx", 5, 3,3,0); // Ax matched, ruled out by ctorA
+        matchFail("xyxAx", 3, 3,3,0); // Ax matched, ruled out by ctorA
 
         //dumpResult=true;
-        matchFatal("xyxBx??", 5, 3,3,0); // Bx matched, fatal error by ctorB
+        matchFatal("xyxBx??", 3, 3,3,0); // Bx matched, fatal error by ctorB
     }
 }

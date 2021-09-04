@@ -48,7 +48,7 @@ but can be used standalone as
         <dependency>
             <groupId>org.rekex</groupId>
             <artifactId>rekex-regexp</artifactId>
-            <version>1.0.1</version>
+            <version>1.1.0</version>
         </dependency>
 
 All factory methods are static methods from
@@ -413,4 +413,4 @@ for questions and discussions.
 
 ----
 *Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a Java job; helps appreciated.*
+I am looking for a job; helps appreciated.*

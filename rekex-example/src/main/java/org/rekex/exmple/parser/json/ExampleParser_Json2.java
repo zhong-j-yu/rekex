@@ -118,16 +118,17 @@ public interface ExampleParser_Json2
         public record Member(String name, JsonElement value){}
 
         public Member member(JsonPrimitive name, @Token(":") char COLON, JsonElement value)
+            throws IllegalArgumentException // semantic predicate
         {
             if(name.object instanceof String str)
                 return new Member(str, value);
             // the name must be a json string; but we only have the JsonPrimitive type.
             // we could use an annotation as the distinguisher.
-            // here, we use IllegalArg to raise a syntactic predicate failure.
+            // but here, we use semantic predicate instead, to fail on non-string.
             // it is not fatal, and the parser will try alternative paths.
             throw new IllegalArgumentException("object member name must be a string");
             // actually, since there's no alternative path here,
-            // we could raise an exception to stop the parsing.
+            // we could raise an undeclared exception to stop the parsing immediately.
         }
 
         public JsonArray array(@Token("[") char PL, SepBy<JsonElement, Comma> values, @Token("]") char PR)

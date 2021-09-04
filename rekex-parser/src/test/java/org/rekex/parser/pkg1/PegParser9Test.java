@@ -25,6 +25,7 @@ public class PegParser9Test extends PegParserTestBase
     {
         //dumpResult=true;
         matchFull("A");
+        matchPartial("AX", 1);
 
         matchFail("B", 0, 0,0);
         matchFail("C", 0, 0,0);

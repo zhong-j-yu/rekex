@@ -123,9 +123,9 @@ public class {className} implements PegParser<{typeArg}>
         add(typeArg);
         add(this._fileHeader3, 47, 594);
         add(typeArg);
-        add(this._fileHeader3, 603, 1147);
+        add(this._fileHeader3, 603, 1190);
         add(catalogClass);
-        add(this._fileHeader3, 1161, 4818);
+        add(this._fileHeader3, 1204, 5037);
     }
     final String _fileHeader3 = """
 
@@ -159,7 +159,7 @@ public class {className} implements PegParser<{typeArg}>
         else
         {
             var stack = pathToStack(state.maxFailPath, state.maxFailPath.length);
-            String msg = failMsg(state.maxFailReason, state.maxFailInfo);
+            String msg = failMsg(state.maxFailReason, state.maxFailEx, _DatatypeList.list.get(state.maxFailRuleId));
             return new ParseResult.Fail<>(state.maxFailPos, msg, stack);
         }
     }
@@ -181,7 +181,8 @@ public class {className} implements PegParser<{typeArg}>
         int maxFailPos = -1;
         int[] maxFailPath;
         int maxFailReason;
-        Object maxFailInfo;
+        Exception maxFailEx;
+        int maxFailRuleId;
 
         public _State clone()
         {
@@ -220,14 +221,15 @@ public class {className} implements PegParser<{typeArg}>
             return t;
         }
 
-        _State fail(int position, int reason, Object info, int startReset)
+        _State fail(int position, int reason, Exception ex, int ruleId, int startReset)
         {
             if(position>maxFailPos)
             {
                 maxFailPos = position;
                 maxFailPath = java.util.Arrays.copyOf(path, pathLen);
                 maxFailReason = reason;
-                maxFailInfo = info;
+                maxFailEx = ex;
+                maxFailRuleId = ruleId;
             }
             return fail(startReset);
         }
@@ -240,22 +242,23 @@ public class {className} implements PegParser<{typeArg}>
         }
 
     }
-    static final int failReason_illegal_arg = 0; // info: IllegalArgumentException
+    static final int failReason_predicate = 0;   // info: Exception
     static final int failReason_neg = 1;         // info: subrule ID
     static final int failReason_regex = 2;
     static final int failReason_regex_group = 3;
 
-    static String failMsg(int reason, Object info)
+    static String failMsg(int reason, Exception ex, org.rekex.annotype.AnnoType type)
     {
+        String typeStr = type.toString(false);
         return switch (reason){
-            case failReason_illegal_arg
-                -> "ctor throws "+info;
+            case failReason_predicate
+                -> typeStr + " ctor throws: "+ex;
             case failReason_neg
-                -> "Not<?> failed; input matches subrule";
+                -> typeStr + " failed; input matches subrule";
             case failReason_regex
-                -> "Input does not match regex";
+                -> "Input does not match regex: "+typeStr;
             case failReason_regex_group
-                -> "Input does not match regex group";
+                -> "Input does not match regex group: "+typeStr;
             default -> throw new AssertionError("unexpected reason: "+reason);
         };
     }
@@ -487,26 +490,39 @@ public class {className} implements PegParser<{typeArg}>
 
 
 
-    public void instantiateFooter()
+    public void instantiateEx1(Object RuntimeException, Object ruleId)
     {
-        add(this._instantiateFooter, 0, 247);
+        add(this._instantiateEx1, 0, 16);
+        add(RuntimeException);
+        add(this._instantiateEx1, 34, 104);
+        add(ruleId);
+        add(this._instantiateEx1, 112, 123);
     }
-    final String _instantiateFooter = """
-        }catch (IllegalArgumentException ex){
-            return state.fail(state.start, failReason_illegal_arg, ex, start0);
+    final String _instantiateEx1 = """
+        }catch ({RuntimeException} ex){
+            return state.fail(start0, failReason_predicate, ex, {ruleId}, start0);
+""";
+
+
+
+    public void instantiateEx2()
+    {
+        add(this._instantiateEx2, 0, 74);
+    }
+    final String _instantiateEx2 = """
         }catch(Exception ex){
-            throw new _FatalEx(state.start, ex);
-        }
-        return state.ok(value);
+            throw new _FatalEx(start0, ex);
 """;
 
 
 
     public void matchConcatFooter()
     {
-        add(this._matchConcatFooter, 0, 7);
+        add(this._matchConcatFooter, 0, 49);
     }
     final String _matchConcatFooter = """
+        }
+        return state.ok(value);
     }
 
 """;
@@ -694,7 +710,7 @@ public class {className} implements PegParser<{typeArg}>
 
 
 
-    public void match_neg(Object negId, Object datatypeStr, Object TypeName, Object subId)
+    public void match_neg(Object negId, Object ruleId, Object datatypeStr, Object TypeName, Object subId)
     {
         add(this._match_neg, 0, 21);
         add(datatypeStr);
@@ -704,9 +720,9 @@ public class {className} implements PegParser<{typeArg}>
         add(subId);
         add(this._match_neg, 173, 245);
         add(TypeName);
-        add(this._match_neg, 255, 317);
-        add(subId);
-        add(this._match_neg, 324, 349);
+        add(this._match_neg, 255, 323);
+        add(ruleId);
+        add(this._match_neg, 331, 356);
     }
     final String _match_neg = """
     // neg rule for: {datatypeStr}
@@ -716,7 +732,7 @@ public class {className} implements PegParser<{typeArg}>
         state2 = match({subId}, state2, -1);
         if(state2.fail)
             return state1.ok(new {TypeName}());
-        return state1.fail(state1.start, failReason_neg, {subId}, state1.start);
+        return state1.fail(state1.start, failReason_neg, null, {ruleId}, state1.start);
     }
 
 
@@ -726,7 +742,7 @@ public class {className} implements PegParser<{typeArg}>
 
     public void match_regex()
     {
-        add(this._match_regex, 0, 653);
+        add(this._match_regex, 0, 669);
     }
     final String _match_regex = """
     static _State match_regex(_State state, int ruleId, java.util.regex.Pattern pattern, int group)
@@ -735,12 +751,12 @@ public class {className} implements PegParser<{typeArg}>
         matcher.region(state.start, state.end);
         boolean matched = matcher.lookingAt();
         if(!matched)
-            return state.fail(state.start, failReason_regex, null, state.start);
+            return state.fail(state.start, failReason_regex, null, ruleId, state.start);
 
         state.gStart = matcher.start(group);
         state.gEnd = matcher.end(group);
         if(state.gStart==-1)
-            return state.fail(state.start, failReason_regex_group, null, state.start);
+            return state.fail(state.start, failReason_regex_group, null, ruleId, state.start);
 
         state.start = matcher.end(0); // consume group 0
         return state.ok(null);
@@ -998,7 +1014,7 @@ public class {className} implements PegParser<{typeArg}>
     {
         add(this._datatypeListFooter, 0, 161);
         add(total);
-        add(this._datatypeListFooter, 168, 535);
+        add(this._datatypeListFooter, 168, 557);
     }
     final String _datatypeListFooter = """
 
@@ -1009,7 +1025,7 @@ public class {className} implements PegParser<{typeArg}>
             {
                 java.lang.reflect.Field field;
                 try{ field = _DatatypeList.class.getDeclaredField("t_"+id); }
-                catch(Exception ex){ throw new Error(ex); }
+                catch(Exception ex){ ex.printStackTrace(); throw new Error(ex); }
                 var type = org.rekex.annotype.TypeMath.convertFromJlr(field.getAnnotatedType());
                 list.add(type);
             }

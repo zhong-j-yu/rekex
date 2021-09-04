@@ -43,4 +43,4 @@ Read More:
 
 ----
 *Create by [Zhong Yu](http://zhong-j-yu.github.io). 
-I am looking for a Java job; helps appreciated.*
+I am looking for a job; helps appreciated.*

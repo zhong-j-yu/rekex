@@ -83,7 +83,7 @@ public class ReferencePegParser<T> implements PegParser<T>
             Fail fail = (Fail)result;
             ArrayList<Node> stack = new ArrayList<>(fail.path.nodes);
             Collections.reverse(stack);
-            String failMsg = failMsg(fail.reason, fail.info);
+            String failMsg = PegParserTemplate.failMsg(fail.reason, fail.ex, fail.rule.datatype());
             return new ParseResult.Fail<>(fail.pos, failMsg, stack);
         }
     }
@@ -111,7 +111,7 @@ public class ReferencePegParser<T> implements PegParser<T>
     {
 
     }
-    record Fail(int pos, Path path, int reason, Object info) implements Result
+    record Fail(int pos, Path path, int reason, Exception ex, GrammarRule rule) implements Result
     {
         public Fail maxFail(){ return this; }
 
@@ -122,11 +122,15 @@ public class ReferencePegParser<T> implements PegParser<T>
             return f2.pos>f1.pos ? f2 : f1;
         }
     }
+    static final int failReason_predicate = PegParserTemplate.failReason_predicate;
+    static final int failReason_neg = PegParserTemplate.failReason_neg;
+    static final int failReason_regex = PegParserTemplate.failReason_regex;
+    static final int failReason_regex_group = PegParserTemplate.failReason_regex_group;
 
     static class FatalEx extends Exception
     {
         final int position;
-        Exception cause;
+        final Exception cause;
         final Path path;
         FatalEx(int position, Exception cause, Path path)
         {
@@ -137,13 +141,14 @@ public class ReferencePegParser<T> implements PegParser<T>
         }
     }
 
-    static final int failReason_illegal_arg = PegParserTemplate.failReason_illegal_arg;
-    static final int failReason_neg = PegParserTemplate.failReason_neg;
-    static final int failReason_regex = PegParserTemplate.failReason_regex;
-    static final int failReason_regex_group = PegParserTemplate.failReason_regex_group;
-    String failMsg(int reason, Object info)
+    static class DeclaredEx extends Exception
     {
-        return PegParserTemplate.failMsg(reason, info);
+        Exception cause;
+        DeclaredEx(Exception cause)
+        {
+            super(null, null, false, false);
+            this.cause = cause;
+        }
     }
 
 
@@ -222,18 +227,22 @@ public class ReferencePegParser<T> implements PegParser<T>
             inputX = new Input(inputX.chars, ok.pos, inputX.end, input0.path);
         }
 
-        // fail pos is set at the end of the matched region.
-        // doubtful. but the start pos is available in the path anyways.
-        int failPos = inputX.start;
+        // fail pos is set at the start of the matched region.
+        // maybe the end position should be provided to user as well.
+        int failPos = input0.start;
         try
         {
-            Object obj = tryInstantiate(failPos, input0.path, rule.instantiator(), args);
+            Object obj = tryInstantiate(rule.instantiator(), args);
             return new OK(obj, inputX.start, maxFail);
         }
-        catch (IllegalArgumentException ex) // not fatal; fail this rule.
+        catch (DeclaredEx ex) // not fatal; fail this rule.
         {
-            Fail thisFail = new Fail(failPos, input0.path, failReason_illegal_arg, ex);
+            Fail thisFail = new Fail(failPos, input0.path, failReason_predicate, ex.cause, rule);
             return Fail.max(maxFail, thisFail);
+        }
+        catch (Exception ex) // throws an undeclared Exception. fatal.
+        {
+            throw new FatalEx(failPos, ex, input0.path);
         }
     }
 
@@ -316,7 +325,7 @@ public class ReferencePegParser<T> implements PegParser<T>
         if(result instanceof Fail)
             return new OK(new Not<>(), input.start, null);
         else
-            return new Fail(input.start, input.path, failReason_neg, rule.subRuleId());
+            return new Fail(input.start, input.path, failReason_neg, null, rule);
     }
 
 
@@ -333,31 +342,40 @@ public class ReferencePegParser<T> implements PegParser<T>
 
         boolean matched = matcher.lookingAt(); // this is greedy by default
         if(!matched)
-            return new Fail(input.start, input.path, failReason_regex, null);
+            return new Fail(input.start, input.path, failReason_regex, null, rule);
 
         var g = regex.group();
         int gStart = matcher.start(g);
         int gEnd = matcher.end(g);
         if(gStart==-1)
-            return new Fail(input.start, input.path, failReason_regex_group, null);
+            return new Fail(input.start, input.path, failReason_regex_group, null, rule);
 
         int g0End = matcher.end(0); // consume group 0
 
         if(rule.instantiator()==null)
             return tryGetCharOrStr(rule, input.chars, gStart, gEnd, g0End, input.path);
 
-        // just StaticField
-        Object obj = tryInstantiate(input.start, input.path, rule.instantiator());
-        return new OK(obj, g0End, null);
+        try
+        {
+            Object obj = tryInstantiate(rule.instantiator());
+            return new OK(obj, g0End, null);
+        }
+        catch (Exception ex)
+        {
+            // not possible; instantiator is StaticField
+            throw new AssertionError(ex);
+        }
     }
 
 
     // ==========================================================================================
 
     // caller should treat IllegalArgumentException as Fail
-    Object tryInstantiate(int fatalPos, Path path, Instantiator itor, Object... args)
-        throws IllegalArgumentException, FatalEx
+    Object tryInstantiate(Instantiator itor, Object... args)
+        throws DeclaredEx, Exception
     {
+        var declaredEx = PkgUtil.getDeclaredExceptions(itor);
+
         try
         {
             Object obj;
@@ -393,13 +411,14 @@ public class ReferencePegParser<T> implements PegParser<T>
             {
                 throw e.getTargetException();
             }
-            catch(IllegalArgumentException ex)
-            {
-                throw ex;
-            }
             catch(Exception ex)
             {
-                throw new FatalEx(fatalPos, ex, path);
+                for(var declared : declaredEx)
+                    if(declared.isInstance(ex))
+                        throw new DeclaredEx(ex);
+
+                // an undeclared Exception
+                throw ex;
             }
             catch (Error ex)
             {
@@ -407,8 +426,8 @@ public class ReferencePegParser<T> implements PegParser<T>
             }
             catch(Throwable ex)
             {
-                // neither Error nor Exception; allowed by Java by nobody does it.
-                throw new FatalEx(fatalPos, new Exception(ex), path);
+                // impossible; getDeclaredExceptions() has checked that no such exception can be thrown
+                throw new AssertionError(ex);
             }
         }
         catch (Exception e)
