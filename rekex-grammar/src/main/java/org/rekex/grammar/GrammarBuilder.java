@@ -13,8 +13,6 @@ import java.util.stream.Collectors;
 
 class GrammarBuilder
 {
-    // it's possible that there are multiple rules with the same datatype,
-    // e.g. one datatype has multiple interfaces, as sub-rule of multiple alt rules.
     ArrayList<GrammarRule> idToRule = new ArrayList<>();
     Integer newId()
     {
@@ -22,7 +20,6 @@ class GrammarBuilder
         return idToRule.size()-1;
     }
 
-    // only for any datatype that can be a start symbol.
     HashMap<AnnoType, Integer> typeToId = new HashMap<>();
 
     Class<?> catalogClass = null;
@@ -448,33 +445,13 @@ class GrammarBuilder
     }
 
 
-
-    // not for types that's too "simple" or "basic"
-    // at least, it's confusing to allow un-annotated char/String types.
+    // previously, we disallowed "simple" types like un-annotated int, String, java.lang.*
+    // as rule datatypes. they could cause confusions.
+    // however, they are safe in ctor catalog, if used carefully.
+    // so we remove any restrictions.
     boolean isAllowedTargetType(AnnoType type)
     {
-        if(type instanceof TypeVar) // uh?
-            return false;
-
-        if(!type.annotations().isEmpty())
-            return true;  // ok, it's a "sophisticated" type
-
-        // bare type, no annotations
-
-        if(type instanceof PrimitiveType)
-            return false;
-
-        if(type instanceof ArrayType) // ok
-            return true;
-
-        if(type instanceof ClassType ct)
-        {
-            // disallow anything in java.lang
-            var pkg = ct.clazz().getPackageName();
-            return(!pkg.equals("java.lang"));
-        }
-
-        throw new AssertionError();
+        return true;
     }
 
     void validatePermitsAnno(Class<?> clazz, Permits permits) throws Exception

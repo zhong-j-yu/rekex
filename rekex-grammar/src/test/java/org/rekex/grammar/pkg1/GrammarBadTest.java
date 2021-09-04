@@ -98,14 +98,6 @@ public class GrammarBadTest extends GrammarTestBase
 
         ex=failOn(Foo.class, EmptyCatalog.class, "no ctor");
 
-        Class<?>[] disallowed = {int.class, char.class, boolean.class,
-            Object.class, Class.class, String.class, Character.class};
-        for(var clazz : disallowed)
-            ex=failOn(clazz, "disallowed rule datatype");
-
-        // char[] -> char -> fail
-        ex=failOn(char[].class, "disallowed rule datatype");
-
         ex=failOn(NoRuleForPrimitive.class, "no predefined rule");
 
         ex=failOn(ZeroRegex.class, "no @Regex");
