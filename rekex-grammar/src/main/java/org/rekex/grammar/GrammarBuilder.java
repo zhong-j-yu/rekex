@@ -363,7 +363,7 @@ class GrammarBuilder
             subTypeV = new ClassType(classType.annotations(), subTypeV.clazz(), subTypeV.typeArgs());
 
             // solve type variables in the subtype
-            var varMap = TypeMath.isInferredSubtype(subTypeV, classType);
+            var varMap = TypeMath.inferredSubtype(subTypeV, classType);
 
             if(varMap==null)
                 throw new Exception("cannot infer [1] to be [2]: [1]="+subclass+ " [2]="+classType);
@@ -385,13 +385,6 @@ class GrammarBuilder
     {
         assert ctorList.size()>0;
         ArrayList<Integer> subRuleIds = new ArrayList<>();
-
-        // these subRules are not addressable by their return types. e.g.
-        //     class Foo
-        //         FooA ctorA(...)
-        // FooA could as well appear in another ctor in another class.
-        // if user wants to use FooA as a start symbol, it's inappropriate to invoke this subRule.
-        // the rule for FooA should be derivable from FooA itself.
 
         int N = ctorList.size();
         for(int i=0; i<N; i++)
@@ -491,10 +484,10 @@ class GrammarBuilder
     CtorInfo tryInferCtor(Method method, AnnoType targetType)
     {
         var returnType = TypeMath.convertFromJlr(method.getAnnotatedReturnType());
-        var typeVarMap = TypeMath.isInferredSubtype(returnType, targetType);
+        var typeVarMap = TypeMath.inferEqualType(returnType, targetType);
         if(typeVarMap==null)
             return null;
-        returnType = TypeMath.doTypeVarSubstitution(returnType, typeVarMap);
+        returnType = targetType;
         return new CtorInfo(returnType, method, typeVarMap);
     }
     CtorInfo newConstructorCtor(Constructor<?> ctor, ClassType classType)
@@ -616,7 +609,7 @@ class GrammarBuilder
             var info = tryInferCtor(ctor, classType);
 
             if(info==null)
-                throw new Exception("return type of ctor[1] not a subtype of [2]: [1]="+ctor+" [2]="+classType);
+                throw new Exception("return type of ctor[1] not equal to [2]: [1]="+ctor+" [2]="+classType);
             // it is conceivable that return types can be used to filter ctors,
             // e.g. ctor returning Foo<A> doesn't cater to target type Foo<B>
             // for now, let's treat it as a programming mistake.

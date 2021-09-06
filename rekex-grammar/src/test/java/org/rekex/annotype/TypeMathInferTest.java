@@ -43,7 +43,7 @@ class TypeMathInferTest
             var target = typeOf(clazz, "target");
             var source = typeOf(clazz, "source");
             expect = typeOf(clazz, "expect");
-            var varMap = TypeMath.isInferredSubtype(source, target);
+            var varMap = TypeMath.inferredSubtype(source, target);
             if(varMap==null)
                 inferred = ClassType.withTypeVars(Void.class);
             else

@@ -70,7 +70,7 @@ from following procedures, whichever succeeds first
 1. For each `public ` method declared in the "ctor catalog" class,
    with 0 or more type parameters `{Ti}`, if there exists a unique
    substitution `{Ti:=Ai}` such that the method return type, with the substitution applied,
-   is a subtype of the target type, the method is a "candidate ctor". 
+   is equal to the target type, the method is a "candidate ctor". 
    If there are one or more candidate ctors in the catalog for the target type,
    invoke subprocedure *derive_from_ctor_list* with these ctors. 
   
@@ -101,11 +101,13 @@ from following procedures, whichever succeeds first
    The grammar rule for the `enum` type is an *Alternation Rule*, with
    each subrule as a `Regex Rule` referencing a constant field and its `@Regex` annotation.
   
-   > It's possible that ctors are declared in the body of an enum type, 
-   > in which case the previous clause precedes this clause.
+   > It's possible that ctors for the enum type are declared 
+   > in the ctor catalog, or in the body of the enum class, 
+   > in which case previous clauses precede this clause.
 
 7. If the class is annotated with `@org.rekex.spec.Permits`,
-   invoke subprocedure *derive_from_subclass_list*, with `value` of the `@Permits` annotation.
+   invoke subprocedure *derive_from_subclass_list*,
+   with classes listed in the `@Permits` annotation.
   
 8. If the class is a `sealed` type,
    invoke subprocedure *derive_from_subclass_list*, with classes in the `permits` clause.
@@ -131,7 +133,7 @@ and finally, use the canonical constructor of the datatype (9).
     Otherwise, ctors are ordered by their line numbers in the source file.
   - For each ctor with with 0 or more type parameters `{Ti}`,
     there must exist a unique substitution `{Ti:=Ai}` such that the result type, 
-    after the substitution applied, is a subtype of the target type.
+    after the substitution applied, is equal to the target type.
   - Create a *Concatenation Rule* for each ctor, with subrules derived from
     types of the constructor/method parameters, with the substitution applied. 
   - The grammar rule for the target type is an *Alternation Rule*

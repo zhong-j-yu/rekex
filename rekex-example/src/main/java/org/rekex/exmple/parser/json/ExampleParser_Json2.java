@@ -5,6 +5,7 @@ import org.rekex.common_util.AnnoBuilder;
 import org.rekex.exmple.parser.ExampleParserUtil;
 import org.rekex.helper.anno.Ch;
 import org.rekex.helper.datatype.SepBy;
+import org.rekex.helper.datatype.alt.Alt4;
 import org.rekex.parser.PegParser;
 import org.rekex.parser.PegParserBuilder;
 import org.rekex.regexp.RegExpApi;
@@ -103,6 +104,12 @@ public interface ExampleParser_Json2
         public Input input(OptWs leadingWs, JsonElement value)
         {
             return new Input(value);
+        }
+
+        // JsonElement is not a sealed type. We need to explicitly declare its variants
+        public JsonElement elem(Alt4<JsonObject, JsonArray, JsonPrimitive, JsonNull> alt)
+        {
+            return (JsonElement)alt.value();
         }
 
         public JsonObject object(@Token("{") char PL, SepBy<Member, Comma> members, @Token("}") char PR)

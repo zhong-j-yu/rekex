@@ -4,19 +4,22 @@ import org.junit.jupiter.api.Test;
 import org.rekex.annotype.ClassType;
 import org.rekex.helper.anno.Ch;
 import org.rekex.parser.PegParserTestBase;
-import org.rekex.spec.Ctor;
 
-public class PegParserCatalog2Test extends PegParserTestBase
+public class PegParserCatalog3Test extends PegParserTestBase
 {
     public sealed interface Foo{}
     public record FooA(boolean b) implements Foo{}
     public record FooB(boolean b) implements Foo{}
+    public record FooC(boolean b) implements Foo{}
 
     public record Bar(Foo a, Foo b){}
 
     public record CatalogClass(boolean config)
     {
-        // ctors are non-static; requires a non-null catalog instance
+        // explicit subtype rules
+        public Foo fooB(FooB b){ return b; }
+        public Foo fooA(FooA a){ return a; }
+
         public
         FooA fooA(@Ch("A") char c){ return new FooA(config); }
 
@@ -26,6 +29,7 @@ public class PegParserCatalog2Test extends PegParserTestBase
 
     {
         //generateJavaHere=true;
+        //dumpGrammar=true;
         initParsers(ClassType.of(Bar.class), CatalogClass.class, new CatalogClass(true));
     }
 

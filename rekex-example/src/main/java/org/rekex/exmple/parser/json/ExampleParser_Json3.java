@@ -7,6 +7,9 @@ import org.rekex.common_util.AnnoBuilder;
 import org.rekex.exmple.parser.ExampleParserUtil;
 import org.rekex.helper.anno.Ch;
 import org.rekex.helper.datatype.SepBy;
+import org.rekex.helper.datatype.alt.Alt2;
+import org.rekex.helper.datatype.alt.Alt4;
+import org.rekex.helper.datatype.alt.Alt6;
 import org.rekex.parser.PegParser;
 import org.rekex.parser.PegParserBuilder;
 import org.rekex.spec.Regex;
@@ -57,8 +60,16 @@ public interface ExampleParser_Json3
             return value;
         }
 
-
-
+        public @JV Object anyValue(Alt6<
+            @JV Map<String, Object>,
+            @JV List<Object>,
+            @JV Boolean,
+            @JV Void, // for null
+            @JV BigDecimal,
+            @JV String> alt)
+        {
+            return alt.value();
+        }
 
 
         @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
@@ -96,7 +107,7 @@ public interface ExampleParser_Json3
             return Boolean.FALSE;
         }
 
-        public @JV Object nullV(@Token("null") String str)
+        public @JV Void nullV(@Token("null") String str)
         {
             return null;
         }

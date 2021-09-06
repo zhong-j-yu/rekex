@@ -30,8 +30,7 @@ public class CtorCatalogGood3Test extends GrammarTestBase
 
     public @Ch("*")char cc(char c1, char c2){ return c1; }
     // here @Ch("*")char is the return type of a ctor,
-    // therefore it is a non-special datatype, not as a Regex rule.
-    // note that it is also a subtype of `char`.
+    // therefore it is a non-token datatype, not as a Regex rule.
 
     @Test
     void testAllSuccessClauses() throws Exception

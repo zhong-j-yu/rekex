@@ -27,9 +27,9 @@ public class GrammarGood2Test extends GrammarTestBase
         public static class Biter<T> extends Taste<T>{}
 
         @Ctor
-        public static <T> Sweet<T> sweet(@Str("sweet")String sweet, T t){ return new Sweet<>(); }
+        public static <T> Taste<T> sweet(@Str("sweet")String sweet, T t){ return new Sweet<>(); }
         @Ctor
-        public static <T> Biter<T> biter(@Str("biter")String biter, T t){ return new Biter<>(); }
+        public static <T> Taste<T> biter(@Str("biter")String biter, T t){ return new Biter<>(); }
 
     }
 

@@ -14,6 +14,8 @@ import org.rekex.spec.Permits;
 @Permits({Alt2.Choice1.class, Alt2.Choice2.class})
 public sealed interface Alt2<T1, T2>
 {
+    Object value();
+
     record Choice1<T1, T2> (T1 value) implements Alt2<T1, T2>{}
 
     record Choice2<T1, T2> (T2 value) implements Alt2<T1, T2>{}

@@ -35,13 +35,13 @@ public class PegParser4Test extends PegParserTestBase
         public static class B<T> extends AB<T>
         {}
 
-        @Ctor public static <T> A<T> ctorA(@Ch("A")char a, T t) throws IllegalArgumentException
+        @Ctor public static <T> AB<T> ctorA(@Ch("A")char a, T t) throws IllegalArgumentException
         {
             if(t==XY.x)
                 throw new IllegalArgumentException("invalid combination Ax");
             return new A<>();
         }
-        @Ctor public static <T> B<T> ctorB(@Ch("B")char b, T t)
+        @Ctor public static <T> AB<T> ctorB(@Ch("B")char b, T t)
         {
             throw new RuntimeException("fatal error ctorB");
         }

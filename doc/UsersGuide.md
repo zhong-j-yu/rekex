@@ -134,7 +134,7 @@ A second public constructor is declared with `@Ctor` to express the "syntactic" 
 ### concatenation rule as factory method
 
 Instead of a constructor, you can declare a public **static method** with `@Ctor`
-for the same purpose. The method return type must be a subtype of the datatype. 
+for the same purpose. The method return type must be the same as the datatype. 
 
     record Member(JsonString name, JsonValue value) 
     {
@@ -189,8 +189,8 @@ then immediately transform it to a desired form in a followup step.
 Multiple ctors can be declared in a datatype (as constructors or static methods, or both)
 
     interface Foo{
-        @Ctor public static FooA fooA(...){...}
-        @Ctor public static FooB fooB(...){...}
+        @Ctor public static Foo fooA(...){...}
+        @Ctor public static Foo fooB(...){...}
     }
 
 The datatype `Foo` corresponds to an alternation rule of two subrules,
@@ -628,8 +628,8 @@ so that it's easier to review the grammar.
 
     public class CtorCatalog 
     {
-        public FooA fooA(...){...}
-        public FooB fooB(...){...}
+        public Foo fooA(...){...}
+        public Foo fooB(...){...}
 
         public Bar bar(List<Foo> foos){...}
         ...
@@ -647,11 +647,11 @@ Do not declare public methods that are not intended as ctors.
 `@Ctor` and `static` are allowed, but not required.
 
 An instance of the catalog must be provided to the parser constructor.
-The instance may be invoked concurrently and must be thread-safe.
+The instance may be invoked concurrently and should be stateless.
 You may have different instances to provide different runtime behaviors of ctors.
 
 To find the ctors for a datatype, Rekex first searches the catalog for ctors
-with a compatible return type.
+that return the datatype.
 If not found, Rekex searches the class body of the datatype.
 If not found there either, Rekex searches subtypes of the datatype.
 

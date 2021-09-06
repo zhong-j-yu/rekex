@@ -134,7 +134,7 @@ public class TypeMath
 
     static boolean isSubtype(AnnoType X, AnnoType Y)
     {
-        var map = isInferredSubtype(X, Y);
+        var map = inferredSubtype(X, Y);
         if(map==null)
             return false;
         if(map.isEmpty())
@@ -147,12 +147,12 @@ public class TypeMath
     // X may contain type variables. If, after type inference and substitution,
     // X is a subtype of Y, return result of type inference (possibly empty).
     // otherwise return null.
-    public static Map<TypeVar,AnnoType> isInferredSubtype(AnnoType X, AnnoType Y)
+    public static Map<TypeVar,AnnoType> inferredSubtype(AnnoType X, AnnoType Y)
     {
         if(X instanceof TypeVar x)
         {
             // x may contain annotations
-            return inferVarWithEquality(x, Y);
+            return inferEqualType(x, Y);
         }
 
         if(X instanceof ClassType x)
@@ -188,7 +188,7 @@ public class TypeMath
                 return null;
 
             if(Y instanceof ArrayType y)
-                return isInferredSubtype(x.componentType, y.componentType);
+                return inferredSubtype(x.componentType, y.componentType);
             else if(Y instanceof ClassType y && isSupertypeOfArrays(y.clazz)) // JLS16#4.10.3.
                 return Map.of();
             else
@@ -202,8 +202,10 @@ public class TypeMath
         return clazz==Object.class || clazz==Cloneable.class || clazz==java.io.Serializable.class;
     }
 
-    // return null if inference fails
-    static Map<TypeVar,AnnoType> inferVarWithEquality(AnnoType sourceType, AnnoType targetType)
+    // X may contain type variables. If, after type inference and substitution,
+    // X is equal to Y, return result of type inference (possibly empty).
+    // otherwise return null.
+    public static Map<TypeVar,AnnoType> inferEqualType(AnnoType sourceType, AnnoType targetType)
     {
         if(sourceType instanceof TypeVar av)
         {
@@ -242,7 +244,7 @@ public class TypeMath
         else if(sourceType instanceof ArrayType s)
         {
             if(targetType instanceof ArrayType t)
-                return inferVarWithEquality(s.componentType, t.componentType);
+                return inferEqualType(s.componentType, t.componentType);
             else
                 return null;
         }
@@ -270,7 +272,7 @@ public class TypeMath
         {
             var argS = S.typeArgs.get(i).asRefType();
             var argT = T.typeArgs.get(i).asRefType();
-            var m = inferVarWithEquality(argS, argT);
+            var m = inferEqualType(argS, argT);
             if(m==null)
                 return null;
             for(var entry : m.entrySet())
