@@ -537,18 +537,13 @@ under the `/tmp` directory.
 For more options of how a parser is built, use 
 [PegParserBuilder](../rekex-parser/src/main/java/org/rekex/parser/PegParserBuilder.java)
 
-    var builder = new PegParserBuilder()
+    PegParser<JsonValue> parser = new PegParserBuilder()
         .rootType(JsonValue.class)
         .packageName("com.example")
         .className("MyJsonParser")
-        .outDirForJava(Paths.get("src/main/java"));
-
-    PegParser<JsonValue> parser = builder.build();
-
-We can print a text version of the grammar for inspection
-
-    var grammar = builder.grammar();
-    System.out.println( grammar.toText() );
+        .outDirForJava(Paths.get("src/main/java"))
+        .logGrammar(System.out::println)
+        .build();
 
 The generated Java source file can be placed in our main src directory
 so that we can instantiate the parser directly.
@@ -644,16 +639,19 @@ so that it's easier to review the grammar.
 
 *All `public` methods declared in the catalog class are considered ctors.* 
 Do not declare public methods that are not intended as ctors.
-`@Ctor` and `static` are allowed, but not required.
+`@Ctor` and `static` are allowed on ctors, but not required.
 
 An instance of the catalog must be provided to the parser constructor.
-The instance may be invoked concurrently and should be stateless.
-You may have different instances to provide different runtime behaviors of ctors.
+The instance may be invoked concurrently and should be immutable;
+it may contain constant data accessible to the ctors.
+You may create multiple parsers each with a different catalog instance
+that influence ctors differently, for example, to test semantic predicates
+against some config info.
 
 To find the ctors for a datatype, Rekex first searches the catalog for ctors
 that return the datatype.
 If not found, Rekex searches the class body of the datatype.
-If not found there either, Rekex searches subtypes of the datatype.
+If not found there either, Rekex searches subtypes of the datatype. // todo
 
 
 

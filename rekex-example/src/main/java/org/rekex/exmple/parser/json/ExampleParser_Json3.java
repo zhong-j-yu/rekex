@@ -151,7 +151,7 @@ public interface ExampleParser_Json3
         return new PegParserBuilder()
             .rootType(Input.class)
             .catalogClass(RulesCatalog.class)
-            //.dumpGrammar(System.out::println)
+            //.logGrammar(System.out::println)
             .build(new RulesCatalog());
     }
 

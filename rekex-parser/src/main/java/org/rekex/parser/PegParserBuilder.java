@@ -195,7 +195,7 @@ public class PegParserBuilder
     /**
      * Send the grammar in textual form to `out`
      */
-    public PegParserBuilder dumpGrammar(Consumer<String> out)
+    public PegParserBuilder logGrammar(Consumer<CharSequence> out)
     {
         out.accept(grammar().toText());
         return this;
