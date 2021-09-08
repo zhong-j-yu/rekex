@@ -25,10 +25,9 @@ import org.rekex.exmple.parser.json.ExampleParser_Json1.OptWs;
 import org.rekex.exmple.parser.json.ExampleParser_Json1.Token;
 import org.rekex.exmple.parser.json.ExampleParser_Json2.RegexNumber;
 
-// In this example, we produce ASTs with ordinary Java Object types:
-//   Map<String,Object>, List<Object>, String, BigDecimal, Boolean, null.
-// Instead of introducing wrapper types, we use annotated types
-// `@JV Object` (and subtypes like @JV Boolean) as datatypes of rules.
+// In this example, we produce ASTs with ordinary Java types:
+//   Map<String,Object>, List<Object>, String, BigDecimal, Boolean, (Void)null.
+// The root type is Object
 //
 // while this is cool, it's probably not a common use case.
 // Json mirrors standard & generic datatypes in a host language.
@@ -43,39 +42,27 @@ public interface ExampleParser_Json3
     String QT = "\"";
     String BS = "\\";
 
+    // to strip leading whitespaces
+    record Input(OptWs leadingWs, Object value){}
+
     // rules --------------------------------------------------------
 
     public class RulesCatalog
     {
-        // to strip leading whitespaces, it's simpler to introduce
-        //    a wrapper type Input(Object) as the root type.
-        // for the sake of this example, we use an annotation instead;
-        // the root type is `@Input()Object`, not too friendly to use.
 
-        @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-        public @interface Input{}
-
-        public @Input()Object input(OptWs leadingWs, @JV Object value)
-        {
-            return value;
-        }
-
-        public @JV Object anyValue(Alt6<
-            @JV Map<String, Object>,
-            @JV List<Object>,
-            @JV Boolean,
-            @JV Void, // for null
-            @JV BigDecimal,
-            @JV String> alt)
+        public Object anyValue(Alt6<
+            Map<String, Object>,
+            List<Object>,
+            Boolean,
+            Void,
+            BigDecimal,
+            String> alt)
         {
             return alt.value();
         }
 
 
-        @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-        public @interface JV{}
-
-        public @JV Map<String, Object> object(@Token("{") char PL, SepBy<Member, Comma> members, @Token("}") char PR)
+        public Map<String, Object> object(@Token("{") char PL, SepBy<Member, Comma> members, @Token("}") char PR)
         {
             // the following code doesn't work because the API doesn't allow `null` in value
             //   return members.values().stream().collect(Collectors.toMap(Member::name, Member::value)); // throws on duplicate keys
@@ -85,34 +72,29 @@ public interface ExampleParser_Json3
             return map;
         }
 
-        public record Member(String name, Object value){}
+        public record Member(String name, @Token(":") char COLON, Object value){}
 
-        public Member member(@JV String name, @Token(":") char COLON, @JV Object value)
-        {
-            return new Member(name, value);
-        }
-
-        public @JV List<Object> array(@Token("[") char PL, SepBy<@JV Object, Comma> values, @Token("]") char PR)
+        public List<Object> array(@Token("[") char PL, SepBy<Object, Comma> values, @Token("]") char PR)
         {
             return values.values();
         }
 
-        public @JV Boolean trueV(@Token({"true"}) String str)
+        public Boolean trueV(@Token({"true"}) String str)
         {
             return Boolean.TRUE;
         }
 
-        public @JV Boolean falseV(@Token({"false"}) String str)
+        public Boolean falseV(@Token({"false"}) String str)
         {
             return Boolean.FALSE;
         }
 
-        public @JV Void nullV(@Token("null") String str)
+        public Void nullV(@Token("null") String str)
         {
             return null;
         }
 
-        public @JV BigDecimal number(@RegexNumber String str, OptWs trailingWs)
+        public BigDecimal number(@RegexNumber String str, OptWs trailingWs)
         {
             return new BigDecimal(str);
         }
@@ -122,16 +104,15 @@ public interface ExampleParser_Json3
 
         // string .............
 
-        // `@JC int` to match a logical json character in strings
-        @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-        public @interface JC{}
+        // un-annotated `int` to match a logical json character in strings
 
-        public @JV String string(@Ch(QT) char QL, @JC int[] chars, @Ch(QT) char QR, OptWs trailingWs)
+        public String string(@Ch(QT) char QL, int[] chars, @Ch(QT) char QR, OptWs trailingWs)
         {
             return new String(chars, 0, chars.length);
         }
 
-        public @JC int char1(@Ch(range={0x20, 0x10FFFF}, except=BS+QT) int c)
+        // unescape char
+        public int char1(@Ch(range={0x20, 0x10FFFF}, except=BS+QT) int c)
         {
             return c;
         }
@@ -139,44 +120,38 @@ public interface ExampleParser_Json3
         final static String escN = BS+QT+"/bfnrt";
         final static String escV = BS+QT+"/\b\f\n\r\t";
 
-        public @JC int escC(@Ch(BS) char BSL, @Ch(escN) char c)
+        // \b etc
+        public int escC(@Ch(BS) char BSL, @Ch(escN) char c)
         {
             int i = escN.indexOf(c);
             assert i!=-1;
             return escV.charAt(i);
         }
 
-        public @JC int escU(@Ch(BS) char BSL, @Ch("u") char U, @Hex char h1, @Hex char h2, @Hex char h3, @Hex char h4)
+        // \u1234
+        public int escU(@Ch(BS) char BSL, @Ch("u") char U, byte h1, byte h2, byte h3, byte h4)
         {
-            return ( h2i(h1,12) | h2i(h2,8) | h2i(h3,4) | h2i(h4,0) );
+            return (h1<<12) | (h2<<8) | (h3<<4) | (h4) ;
         }
 
-        @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-        public @interface Hex{
-            AnnoMacro<Hex,Regex> toRegex = thiz->
-                AnnoBuilder.build(Regex.class, "[0-9A-Fa-f]");
-        }
-        static int h2i(char h, int shift)
+        // `byte` as a hex char
+        public byte hex(@Regex("[0-9A-Fa-f]")char h)
         {
             // ascii order:  0..9..A..Z..a..z
-            if(h<='9') return (h-'0')<<shift;
-            if(h>='a') return (h-'a'+10)<<shift;
-            return (h-'A'+10)<<shift;
+            if(h<='9') return (byte)(h-'0');
+            if(h>='a') return (byte)(h-'a'+10);
+            return (byte)(h-'A'+10);
         }
-
     }
 
     // test ----------------------------------------------------
 
     public static PegParser<Object> parser()
     {
-        // @Input()Object
-        Annotation n_expr = AnnoBuilder.of(RulesCatalog.Input.class).build();
-        AnnoType type = new ClassType(Set.of(n_expr), Object.class, List.of());
-
         return new PegParserBuilder()
-            .rootType(type)
+            .rootType(Input.class)
             .catalogClass(RulesCatalog.class)
+            //.dumpGrammar(System.out::println)
             .build(new RulesCatalog());
     }
 

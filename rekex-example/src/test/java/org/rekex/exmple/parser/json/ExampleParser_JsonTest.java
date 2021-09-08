@@ -16,10 +16,18 @@ import java.util.Set;
 
 class ExampleParser_JsonTest
 {
+    List<PegParser<?>> parsers;
 
     @Test
     void test() throws Exception
     {
+        // do this inside test() to include the time spent as part of test
+        parsers = List.of(
+            ExampleParser_Json1.parser(),
+            ExampleParser_Json2.parser(),
+            ExampleParser_Json3.parser()
+        );
+
         {
             // src/test/resources/json_test
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -38,11 +46,6 @@ class ExampleParser_JsonTest
         }
     }
 
-    List<PegParser<?>> parsers = List.of(
-        ExampleParser_Json1.parser(),
-        ExampleParser_Json2.parser(),
-        ExampleParser_Json3.parser()
-    );
     Set<String> skippedFiles = Set.of(
         // stackoverflow due to deeply nested structure
         // that's ok for us - we admit we have recursion limits.
@@ -95,6 +98,7 @@ class ExampleParser_JsonTest
         for(var parser : parsers)
         {
             result = parse(parser, content);
+            //System.out.println(result);
 
             if(result instanceof ParseResult.Fatal<?> fatal)
                 throw new AssertionFailedError("fatal error; file="+file+", result="+result+", parser="+parser, fatal.cause());
