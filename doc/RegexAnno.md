@@ -69,10 +69,10 @@ Most likely, you'll need to define your annotation that's
 convertible to `@StrWs` with a default `wsChars`
 
         @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-        @interface Token
+        @interface Word
         {
             String[] value();
-            AnnoMacro<Token, StrWs> toStrWs = StrWs.Macro.of(Token::value, " \t\r\n");
+            AnnoMacro<Word, StrWs> toStrWs = StrWs.Macro.of(Word::value, " \t\r\n");
         }
 
 ## create @Regex equivalent with RegExp

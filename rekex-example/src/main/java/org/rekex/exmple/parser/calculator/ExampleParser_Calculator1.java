@@ -24,37 +24,37 @@ public interface ExampleParser_Calculator1
 
     // equivalent to @StrWs, with default whitespace chars
     @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-    @interface Token
+    @interface Word
     {
         String[] value();
-        AnnoMacro<Token, StrWs> toStrWs = StrWs.Macro.of(Token::value, wsChars);
+        AnnoMacro<Word, StrWs> toStrWs = StrWs.Macro.of(Word::value, wsChars);
     }
 
     // zero or more whitespaces
-    enum OptWs{ @Token("")I }
+    enum OptWs{ @Word("")I }
 
     // tokens --------------------------------------------------------
 
     enum TermOp {
-        @Token("+") plus,
-        @Token("-") minus;
+        @Word("+") plus,
+        @Word("-") minus;
 
         public int eval(int x, int y){
             return this==plus ? x+y : x-y;
         }
     }
     enum FactorOp {
-        @Token({"/","÷"}) div,
-        @Token({"*","×"}) mul,
-        @Token("") mul_implicit; // fac1 fac2 == fac1 * fac2
+        @Word({"/","÷"}) div,
+        @Word({"*","×"}) mul,
+        @Word("") mul_implicit; // fac1 fac2 == fac1 * fac2
 
         public int eval(int x, int y){
             return this==div ? x/y : x*y;
         }
     }
 
-    enum PL { @Token("(")I }
-    enum PR { @Token(")")I }
+    enum PL { @Word("(")I }
+    enum PR { @Word(")")I }
 
     // one or more digits; skip trailing whitespaces.
     record Digits(@Regex("[0-9]+")String str, OptWs trailingWs){

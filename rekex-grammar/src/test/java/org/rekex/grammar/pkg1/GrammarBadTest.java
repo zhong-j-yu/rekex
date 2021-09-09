@@ -138,7 +138,7 @@ public class GrammarBadTest extends GrammarTestBase
         ex=failOn(CtorNotPublic.class, CtorNotPublic.class, "public");
         ex=failOn(CtorNotPublic.class, "public");
 
-        ex=failOn(CtorWrongType.class, "not a subtype of");
+        ex=failOn(CtorWrongType.class, "return type");
 
     }
 }

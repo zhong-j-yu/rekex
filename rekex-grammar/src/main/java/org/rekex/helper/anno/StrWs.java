@@ -15,7 +15,7 @@ import java.util.function.Function;
 // Very useful to match tokens, which almost always allow spaces between.
 //
 // Usually user should define a macro that's convertible to this annotation,
-// e.g.  @Token(val) => @StrWs(val, userWS)
+// e.g.  @Word(val) => @StrWs(val, userWS)
 //
 // no @ChWs. it's not very useful. @Ch are usually not for tokens.
 // but if needed, since @Ch("xy") ~ @Str({"x","y"}), @StrWs will do the job.

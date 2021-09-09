@@ -34,17 +34,17 @@ public class PegParser2Test extends PegParserTestBase
     ){}
 
     @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-    public @interface Token
+    public @interface Word
     {
         String[] value();
-        AnnoMacro<Token, StrWs> toStrWs = StrWs.Macro.of(Token::value, " ");
+        AnnoMacro<Word, StrWs> toStrWs = StrWs.Macro.of(Word::value, " ");
     }
 
 
     public enum EnumBar
     {
         @Str("x")x,
-        @Token("y")y,
+        @Word("y")y,
     }
 
     {

@@ -33,21 +33,21 @@ public class StrWsTest
     void test(boolean ignoreCase, String[] value, String input, String match)
     {
         Annotation a1 = ignoreCase
-            ? AnnoBuilder.build(TokenIgnoreCase.class, value)
-            : AnnoBuilder.build(Token.class, value);
+            ? AnnoBuilder.build(WordIgnoreCase.class, value)
+            : AnnoBuilder.build(Word.class, value);
         RegexTestUtil.test(a1, input, match);
     }
 
     final static String wsChars = " \t";
-    @interface Token
+    @interface Word
     {
         String[] value();
-        AnnoMacro<Token, StrWs> toStrWs = StrWs.Macro.of(Token::value, wsChars);
+        AnnoMacro<Word, StrWs> toStrWs = StrWs.Macro.of(Word::value, wsChars);
     }
-    @interface TokenIgnoreCase
+    @interface WordIgnoreCase
     {
         String[] value();
-        AnnoMacro<TokenIgnoreCase, StrWs> toStrWs = StrWs.Macro.of(TokenIgnoreCase::value, true, wsChars);
+        AnnoMacro<WordIgnoreCase, StrWs> toStrWs = StrWs.Macro.of(WordIgnoreCase::value, true, wsChars);
     }
 }
 

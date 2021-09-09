@@ -30,21 +30,21 @@ public interface ExampleParser_Json1
 
     // equivalent to @StrWs, with default whitespace chars
     @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-    @interface Token
+    @interface Word
     {
         String[] value();
-        AnnoMacro<Token, StrWs> toStrWs = StrWs.Macro.of(Token::value, wsChars);
+        AnnoMacro<Word, StrWs> toStrWs = StrWs.Macro.of(Word::value, wsChars);
     }
 
     // zero or more whitespaces
-    enum OptWs{ @Token("")I }
+    enum OptWs{ @Word("")I }
 
     // to skip leading ws
     record Input(OptWs leadingWs, JsonValue value){}
 
     // tokens --------------------------------------------------------
 
-    enum Comma{ @Token(",") COMMA }
+    enum Comma{ @Word(",") COMMA }
     // we could define enums for all separators like "{", ":"
     // but they are used only once in grammar, so we don't bother.
     // maybe it is nicer to define them all here for clarity.
@@ -52,12 +52,12 @@ public interface ExampleParser_Json1
     // simple literals ------------------------------------------------
 
     enum JsonBoolean implements JsonValue {
-        @Token("true") TRUE,
-        @Token("false") FALSE;
+        @Word("true") TRUE,
+        @Word("false") FALSE;
     }
 
     enum JsonNull implements JsonValue {
-        @Token("null") NULL;
+        @Word("null") NULL;
     }
 
     // string and number literals -------------------------------------
@@ -127,21 +127,21 @@ public interface ExampleParser_Json1
     // composite datatypes -----------------------------------------------------
 
     record JsonObject(
-        @Token("{")char PL,
+        @Word("{")char PL,
         SepBy<Member, Comma> members,
-        @Token("}")char PR
+        @Word("}")char PR
     ) implements JsonValue{}
 
     record Member(
         JsonString name,
-        @Token(":") char COLON,
+        @Word(":") char COLON,
         JsonValue value
     ){}
 
     record JsonArray(
-        @Token("[")char PL,
+        @Word("[")char PL,
         SepBy<JsonValue, Comma> values,
-        @Token("]")char PR
+        @Word("]")char PR
     )implements JsonValue{}
 
     // convert to Java String and BigDecimal -------------------------

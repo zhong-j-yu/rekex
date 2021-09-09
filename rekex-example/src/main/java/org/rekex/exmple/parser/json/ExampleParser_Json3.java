@@ -1,28 +1,20 @@
 package org.rekex.exmple.parser.json;
 
-import org.rekex.annomacro.AnnoMacro;
-import org.rekex.annotype.AnnoType;
-import org.rekex.annotype.ClassType;
-import org.rekex.common_util.AnnoBuilder;
 import org.rekex.exmple.parser.ExampleParserUtil;
 import org.rekex.helper.anno.Ch;
 import org.rekex.helper.datatype.SepBy;
-import org.rekex.helper.datatype.alt.Alt2;
-import org.rekex.helper.datatype.alt.Alt4;
 import org.rekex.helper.datatype.alt.Alt6;
 import org.rekex.parser.PegParser;
 import org.rekex.parser.PegParserBuilder;
 import org.rekex.spec.Regex;
 
-import java.lang.annotation.*;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.rekex.exmple.parser.json.ExampleParser_Json1.OptWs;
-import org.rekex.exmple.parser.json.ExampleParser_Json1.Token;
+import org.rekex.exmple.parser.json.ExampleParser_Json1.Word;
 import org.rekex.exmple.parser.json.ExampleParser_Json2.RegexNumber;
 
 // In this example, we produce ASTs with ordinary Java types:
@@ -37,7 +29,7 @@ public interface ExampleParser_Json3
 {
     // tokens --------------------------------------------------------
 
-    enum Comma{ @Token(",") COMMA }
+    enum Comma{ @Word(",") COMMA }
 
     String QT = "\"";
     String BS = "\\";
@@ -62,7 +54,7 @@ public interface ExampleParser_Json3
         }
 
 
-        public Map<String, Object> object(@Token("{") char PL, SepBy<Member, Comma> members, @Token("}") char PR)
+        public Map<String, Object> object(@Word("{") char PL, SepBy<Member, Comma> members, @Word("}") char PR)
         {
             // the following code doesn't work because the API doesn't allow `null` in value
             //   return members.values().stream().collect(Collectors.toMap(Member::name, Member::value)); // throws on duplicate keys
@@ -72,24 +64,24 @@ public interface ExampleParser_Json3
             return map;
         }
 
-        public record Member(String name, @Token(":") char COLON, Object value){}
+        public record Member(String name, @Word(":") char COLON, Object value){}
 
-        public List<Object> array(@Token("[") char PL, SepBy<Object, Comma> values, @Token("]") char PR)
+        public List<Object> array(@Word("[") char PL, SepBy<Object, Comma> values, @Word("]") char PR)
         {
             return values.values();
         }
 
-        public Boolean trueV(@Token({"true"}) String str)
+        public Boolean trueV(@Word({"true"}) String str)
         {
             return Boolean.TRUE;
         }
 
-        public Boolean falseV(@Token({"false"}) String str)
+        public Boolean falseV(@Word({"false"}) String str)
         {
             return Boolean.FALSE;
         }
 
-        public Void nullV(@Token("null") String str)
+        public Void nullV(@Word("null") String str)
         {
             return null;
         }

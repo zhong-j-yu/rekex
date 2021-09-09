@@ -405,7 +405,7 @@ annotation with the RegExp API.
 ### Whitespace handling
 
 The Json grammar, like most grammars, allows whitespaces between most tokens.
-The best way to handle them is to consume trailing whitespaces after each token.
+The best way to handle them is to consume trailing whitespaces after such token.
 
 Here's how it's achieved in Rekex.
 An `@Regex` can specific a `group` attribute, for example
@@ -419,45 +419,44 @@ the grammar rule will match and consume `"true"` with trailing whitespaces,
 but the content of the `String` will only contain `"true"`.
 
 We need a simpler macro for this purpose.
-In your code, define your own annotation macro `@Token`
+In your code, define your own annotation macro `@Word`
 
     static final String wsChars = " \t\n\r";  // whitespace chars allowed by Json
 
     @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-    @interface Token
+    @interface Word
     {
         String[] value();
-        AnnoMacro<Token, StrWs> toStrWs = StrWs.Macro.of(Token::value, wsChars);
+        AnnoMacro<Word, StrWs> toStrWs = StrWs.Macro.of(Word::value, wsChars);
     }
 
-Don't mind the ugly details, just copy this `@Token` definition into your code,
+Don't mind the ugly details, just copy this `@Word` definition into your code,
 replace `wsChars` with whitespaces of your grammar.
-`@Token` matches any of the string literals in `value()`
+`@Word` matches any of the string literals in `value()`
 followed by zero or more chars in `wsChars`.
 
 Next, review all existing tokenizers; if trailing whitespaces are allowed after a token, 
-use `@Token` instead of `@Ch` or `@Str`.
+use `@Word` instead of `@Ch` or `@Str`.
 
     enum JsonBool implements JsonPrimitive
     {
-        @Token("true") TRUE,
-        @Token("false") FALSE,
+        @Word("true") TRUE,
+        @Word("false") FALSE,
     }
 
-    enum Comma{ @Token(",")I }
+    enum Comma{ @Word(",")I }
 
-    record JsonArray( @Token("[")char bL, ... ) ...
+    record JsonArray( @Word("[")char bL, ... ) ...
 
-Be careful though. For example, the starting quote of a Json string cannot be a `@Token`,
+Be careful though. For example, the starting quote of a Json string cannot be a `@Word`,
 because whitespaces after the quote are characters in the string and cannot be skipped.
-(Maybe "Token" isn't a great choice of name; pick your own name.)
 
 We'll also need to match optional whitespaces in some other places,
-notably leading whitespaces in inputs, which `@Token` doesn't address.
+notably leading whitespaces in inputs, which `@Word` doesn't address.
 Define a datatype for optional whitespaces and insert it wherever it's allowed. 
 
     // zero or more whitespaces
-    enum OptWs{ @Token("")I }
+    enum OptWs{ @Word("")I }
 
     // skip leading whitespaces in input
     record JsonInput(OptWs leadingWs, JsonValue value){}
@@ -651,7 +650,8 @@ against some config info.
 To find the ctors for a datatype, Rekex first searches the catalog for ctors
 that return the datatype.
 If not found, Rekex searches the class body of the datatype.
-If not found there either, Rekex searches subtypes of the datatype. // todo
+If not found there either, Rekex searches subtypes of the datatype.
+Finally, the canonical constructor is used as the ctor. 
 
 
 

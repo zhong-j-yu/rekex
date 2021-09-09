@@ -7,7 +7,6 @@ import org.rekex.helper.anno.Ch;
 import org.rekex.helper.datatype.SepBy;
 import org.rekex.helper.datatype.alt.Alt4;
 import org.rekex.parser.PegParser;
-import org.rekex.parser.PegParserBuilder;
 import org.rekex.regexp.RegExpApi;
 import org.rekex.spec.Regex;
 
@@ -22,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.rekex.exmple.parser.json.ExampleParser_Json1.OptWs;
-import org.rekex.exmple.parser.json.ExampleParser_Json1.Token;
+import org.rekex.exmple.parser.json.ExampleParser_Json1.Word;
 
 // in this example, we produce ASTs with Gson's JsonElement types.
 // it's a 3rd party library we cannot modify.
@@ -31,7 +30,7 @@ public interface ExampleParser_Json2
 {
     // tokens --------------------------------------------------------
 
-    enum Comma{ @Token(",") COMMA }
+    enum Comma{ @Word(",") COMMA }
 
     // we don't care about the internal structure of a number.
     // create one regex to match the whole thing.
@@ -112,7 +111,7 @@ public interface ExampleParser_Json2
             return (JsonElement)alt.value();
         }
 
-        public JsonObject object(@Token("{") char PL, SepBy<Member, Comma> members, @Token("}") char PR)
+        public JsonObject object(@Word("{") char PL, SepBy<Member, Comma> members, @Word("}") char PR)
         {
             JsonObject obj = new JsonObject();
             for(var member : members.values())
@@ -124,7 +123,7 @@ public interface ExampleParser_Json2
         // the syntactic structure is defined not here, but by member() ctor.
         public record Member(String name, JsonElement value){}
 
-        public Member member(JsonPrimitive name, @Token(":") char COLON, JsonElement value)
+        public Member member(JsonPrimitive name, @Word(":") char COLON, JsonElement value)
             throws IllegalArgumentException // semantic predicate
         {
             if(name.object instanceof String str)
@@ -138,7 +137,7 @@ public interface ExampleParser_Json2
             // we could raise an undeclared exception to stop the parsing immediately.
         }
 
-        public JsonArray array(@Token("[") char PL, SepBy<JsonElement, Comma> values, @Token("]") char PR)
+        public JsonArray array(@Word("[") char PL, SepBy<JsonElement, Comma> values, @Word("]") char PR)
         {
             JsonArray array = new JsonArray();
             for(var value : values.values())
@@ -146,17 +145,17 @@ public interface ExampleParser_Json2
             return array;
         }
 
-        public JsonPrimitive trueV(@Token("true") String str)
+        public JsonPrimitive trueV(@Word("true") String str)
         {
             return new JsonPrimitive(Boolean.TRUE);
         }
 
-        public JsonPrimitive falseV(@Token("false") String str)
+        public JsonPrimitive falseV(@Word("false") String str)
         {
             return new JsonPrimitive(Boolean.FALSE);
         }
 
-        public JsonNull nullV(@Token("null") String str)
+        public JsonNull nullV(@Word("null") String str)
         {
             return JsonNull.INSTANCE;
         }
