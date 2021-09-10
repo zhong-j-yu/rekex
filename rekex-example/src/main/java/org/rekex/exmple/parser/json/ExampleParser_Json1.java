@@ -161,7 +161,9 @@ public interface ExampleParser_Json1
     }
 
     // we'll reconstruct the whole string from parts, hand it to another parser.
-    // this is rather silly. Later, we'll use one regex to match the entire number.
+    // this is rather silly.
+    // In later examples, we'll use one regex to match the entire number.
+    // Alternatively, use ParseInfo to retrieve the text that matches JsonNumber.
     static BigDecimal toBigDecimal(JsonNumber jn)
     {
         StringBuffer sb = new StringBuffer();

@@ -125,7 +125,7 @@ public class {className} implements PegParser<{typeArg}>
         add(typeArg);
         add(this._fileHeader3, 603, 1190);
         add(catalogClass);
-        add(this._fileHeader3, 1204, 5037);
+        add(this._fileHeader3, 1204, 5251);
     }
     final String _fileHeader3 = """
 
@@ -170,6 +170,14 @@ public class {className} implements PegParser<{typeArg}>
         CharSequence chars;
         int start;
         int end;
+
+        org.rekex.parser.LineCounter lc;
+        org.rekex.parser.LineCounter lc()
+        {
+            if(lc==null)
+                lc = new org.rekex.parser.LineCounter(chars);
+            return lc;
+        }
 
         boolean fail;
         // if fail==false, match is success, obj is set (null is allowed)
@@ -395,51 +403,101 @@ public class {className} implements PegParser<{typeArg}>
         add(datatypeStr);
         add(this._matchConcatHeader, 37, 61);
         add(concatId);
-        add(this._matchConcatHeader, 71, 149);
+        add(this._matchConcatHeader, 71, 148);
     }
     final String _matchConcatHeader = """
     // concat rule for: {datatypeStr}
     static _State rule_{concatId}(_State state) throws _FatalEx
     {
         final int start0 = state.start;
+""";
 
+
+
+    public void initParseInfo(Object subCount)
+    {
+        add(this._initParseInfo, 0, 37);
+        add(subCount);
+        add(this._initParseInfo, 47, 81);
+        add(subCount);
+        add(this._initParseInfo, 91, 124);
+    }
+    final String _initParseInfo = """
+        Object[] argArr = new Object[{subCount}];
+        int[] posArr = new int[{subCount}+1];
+        posArr[0] = start0;
 """;
 
 
 
     public void matchConcatSubRule(Object subIndex, Object subId, Object subType, Object subDesc)
     {
-        add(this._matchConcatSubRule, 0, 22);
+        add(this._matchConcatSubRule, 0, 23);
         add(subId);
-        add(this._matchConcatSubRule, 29, 38);
+        add(this._matchConcatSubRule, 30, 39);
         add(subIndex);
-        add(this._matchConcatSubRule, 48, 58);
+        add(this._matchConcatSubRule, 49, 59);
         add(subIndex);
-        add(this._matchConcatSubRule, 68, 70);
+        add(this._matchConcatSubRule, 69, 71);
         add(subDesc);
-        add(this._matchConcatSubRule, 79, 150);
+        add(this._matchConcatSubRule, 80, 151);
         add(subType);
-        add(this._matchConcatSubRule, 159, 164);
+        add(this._matchConcatSubRule, 160, 165);
         add(subIndex);
-        add(this._matchConcatSubRule, 174, 195);
+        add(this._matchConcatSubRule, 175, 195);
     }
     final String _matchConcatSubRule = """
+
         state = match({subId}, state, {subIndex}); // arg_{subIndex}: {subDesc}
         if(state.fail)
             return state.fail(start0);
         {subType} arg_{subIndex} = state.pickObj();
+""";
 
+
+
+    public void matchParseInfo(Object subIndex2, Object ParseInfo)
+    {
+        add(this._matchParseInfo, 0, 9);
+        add(ParseInfo);
+        add(this._matchParseInfo, 20, 25);
+        add(subIndex2);
+        add(this._matchParseInfo, 36, 43);
+        add(ParseInfo);
+        add(this._matchParseInfo, 54, 97);
+    }
+    final String _matchParseInfo = """
+
+        {ParseInfo} arg_{subIndex2} = new {ParseInfo}(state.chars, state.lc(), argArr, posArr);
+""";
+
+
+
+    public void concatSubRuleParseInfo(Object subIndex)
+    {
+        add(this._concatSubRuleParseInfo, 0, 15);
+        add(subIndex);
+        add(this._concatSubRuleParseInfo, 25, 33);
+        add(subIndex);
+        add(this._concatSubRuleParseInfo, 43, 60);
+        add(subIndex);
+        add(this._concatSubRuleParseInfo, 70, 89);
+    }
+    final String _concatSubRuleParseInfo = """
+        argArr[{subIndex}] = arg_{subIndex};
+        posArr[{subIndex}+1] = state.start;
 """;
 
 
 
     public void instantiateHeader(Object TypeName)
     {
-        add(this._instantiateHeader, 0, 8);
+        add(this._instantiateHeader, 0, 9);
         add(TypeName);
-        add(this._instantiateHeader, 18, 39);
+        add(this._instantiateHeader, 19, 40);
     }
     final String _instantiateHeader = """
+
         {TypeName} value;
         try{
 """;

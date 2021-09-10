@@ -85,6 +85,14 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
         int start;
         int end;
 
+        org.rekex.parser.LineCounter lc;
+        org.rekex.parser.LineCounter lc()
+        {
+            if(lc==null)
+                lc = new org.rekex.parser.LineCounter(chars);
+            return lc;
+        }
+
         boolean fail;
         // if fail==false, match is success, obj is set (null is allowed)
         Object obj;
@@ -268,6 +276,7 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
     static int ruleId;
     static int subId;
     static int subIndex;
+    static int subCount;
 
     //** comment  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  alt
 
@@ -293,14 +302,24 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
     static _State rule_concatId(_State state) throws _FatalEx
     {
         final int start0 = state.start;
-
+        //** template initParseInfo(subCount) + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+        Object[] argArr = new Object[subCount];
+        int[] posArr = new int[subCount+1];
+        posArr[0] = start0;
         //** template matchConcatSubRule(subIndex, subId, subType`TypeName`, subDesc) + + + + + + + + + + + + + +
+
         state = match(subId, state, subIndex); // arg_subIndex: subDesc
         if(state.fail)
             return state.fail(start0);
         TypeName arg_subIndex = state.pickObj();
+        //** template matchParseInfo(subIndex2, ParseInfo) + + + + + + + + + + + + + + + + + + + + + + + + + +
 
+        ParseInfo arg_subIndex2 = new ParseInfo(state.chars, state.lc(), argArr, posArr);
+        //** template concatSubRuleParseInfo(subIndex) + + + + + + + + + + + + + +
+        argArr[subIndex] = arg_subIndex;
+        posArr[subIndex+1] = state.start;
         //** template instantiateHeader(TypeName) + + + + + + + + + + + + + + + + + + + +
+
         TypeName value;
         try{
             //** template instantiateNewInstance(TypeName, args) + + + + + + + + + + + + + + + + + + + +

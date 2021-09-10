@@ -194,18 +194,45 @@ class PegParserCodeGen
         return null;
     }
 
+    final ClassType typeParseInfo = ClassType.of(ParseInfo.class);
+
     Void genConcat(ConcatRule rule)
     {
+        // if( rule.datatype().equals(typeParseInfo) )
+        // the generated method won't be called at runtime.
+        // ParseInfo is handled specially. generate for it anyway.
+
         maker.matchConcatHeader(rule.id(), annoTypeStr(rule.datatype()));
 
         int N = rule.subRuleIds().size();
+
+        ArrayList<GrammarRule> subRules = new ArrayList<>();
         for(int i=0; i<N; i++)
         {
             var subId = rule.subRuleIds().get(i);
             var subRule = grammar.idToRule().get(subId);
-            var datatype = subRule.datatype();
-            maker.matchConcatSubRule(i, subId, typeStr(datatype), annoTypeStr(datatype));
+            subRules.add(subRule);
         }
+
+        boolean requireParseInfo = subRules.stream().map(GrammarRule::datatype)
+            .anyMatch(type->type.equals(typeParseInfo));
+
+        if(requireParseInfo)
+            maker.initParseInfo(N);
+
+        for(int i=0; i<N; i++)
+        {
+            var subRule = subRules.get(i);
+            var datatype = subRule.datatype();
+            if(datatype.equals(typeParseInfo))
+                maker.matchParseInfo(i, classStr(ParseInfo.class));
+            else
+                maker.matchConcatSubRule(i, subRule.id(), typeStr(datatype), annoTypeStr(datatype));
+
+            if(requireParseInfo)
+                maker.concatSubRuleParseInfo(i);
+        }
+
 
         String args = IntStream.range(0,N).mapToObj(i->"arg_"+i).collect(Collectors.joining(", "));
 
