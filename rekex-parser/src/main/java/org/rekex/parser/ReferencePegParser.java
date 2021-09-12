@@ -84,7 +84,7 @@ public class ReferencePegParser<T> implements PegParser<T>
             ArrayList<Node> stack = new ArrayList<>(fail.path.nodes);
             Collections.reverse(stack);
             String failMsg = PegParserTemplate.failMsg(fail.reason, fail.ex, fail.rule.datatype());
-            return new ParseResult.Fail<>(fail.pos, failMsg, stack);
+            return new ParseResult.Fail<>(fail.pos, failMsg, fail.ex, stack);
         }
     }
 
@@ -203,6 +203,14 @@ public class ReferencePegParser<T> implements PegParser<T>
 
         if(maxFail==null) // we don't produce 0-arity alt rules
             throw new AssertionError();
+
+        // if all alternative failed at input.start,
+        // maxFail is the fail of the 1st alternative.
+        // user can provide a better error message in case all failed,
+        // by adding a 1st alternative that
+        //     syntactically succeeds unconditionally. (epsilon)
+        //     semantically fail unconditionally, with the error message
+        // in future, we can provide easier, declarative ways for error reporting
 
         return maxFail;
     }

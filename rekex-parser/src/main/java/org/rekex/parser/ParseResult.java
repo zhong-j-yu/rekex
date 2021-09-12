@@ -44,13 +44,14 @@ public sealed interface ParseResult<T>
      * The result contains a position in the input where the failure occurred,
      * and the parse stack at the time of the failure (see {@link Node}).
      */
-    record Fail<T>(int position, String message, List<Node> stack) implements ParseResult<T>
+    record Fail<T>(int position, String message, Exception exception, List<Node> stack) implements ParseResult<T>
     {
         @Override
         public String toString()
         {
-            return "Failed at pos="+ position + ", msg="+message +
-                stack.stream().map(Node::toStr).collect(Collectors.joining());
+            return "Failed at pos="+ position + ", msg="+message
+                + (exception==null ? "" : ", ex="+exception.toString())
+                + stack.stream().map(Node::toStr).collect(Collectors.joining());
         }
     }
 

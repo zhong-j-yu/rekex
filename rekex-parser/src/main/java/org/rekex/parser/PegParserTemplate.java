@@ -73,7 +73,7 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
         {
             var stack = pathToStack(state.maxFailPath, state.maxFailPath.length);
             String msg = failMsg(state.maxFailReason, state.maxFailEx, _DatatypeList.list.get(state.maxFailRuleId));
-            return new ParseResult.Fail<>(state.maxFailPos, msg, stack);
+            return new ParseResult.Fail<>(state.maxFailPos, msg, state.maxFailEx, stack);
         }
     }
 
@@ -177,9 +177,9 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
         String typeStr = type.toString(false);
         return switch (reason){
             case failReason_predicate
-                -> typeStr + " ctor throws: "+ex;
+                -> ex.getMessage()!=null ? ex.getMessage() : ex.toString();
             case failReason_neg
-                -> typeStr + " failed; input matches subrule";
+                -> typeStr + " failed; input matched subrule";
             case failReason_regex
                 -> "Input does not match regex: "+typeStr;
             case failReason_regex_group

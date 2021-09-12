@@ -123,9 +123,9 @@ public class {className} implements PegParser<{typeArg}>
         add(typeArg);
         add(this._fileHeader3, 47, 594);
         add(typeArg);
-        add(this._fileHeader3, 603, 1190);
+        add(this._fileHeader3, 603, 1207);
         add(catalogClass);
-        add(this._fileHeader3, 1204, 5251);
+        add(this._fileHeader3, 1221, 5294);
     }
     final String _fileHeader3 = """
 
@@ -160,7 +160,7 @@ public class {className} implements PegParser<{typeArg}>
         {
             var stack = pathToStack(state.maxFailPath, state.maxFailPath.length);
             String msg = failMsg(state.maxFailReason, state.maxFailEx, _DatatypeList.list.get(state.maxFailRuleId));
-            return new ParseResult.Fail<>(state.maxFailPos, msg, stack);
+            return new ParseResult.Fail<>(state.maxFailPos, msg, state.maxFailEx, stack);
         }
     }
 
@@ -260,9 +260,9 @@ public class {className} implements PegParser<{typeArg}>
         String typeStr = type.toString(false);
         return switch (reason){
             case failReason_predicate
-                -> typeStr + " ctor throws: "+ex;
+                -> ex.getMessage()!=null ? ex.getMessage() : ex.toString();
             case failReason_neg
-                -> typeStr + " failed; input matches subrule";
+                -> typeStr + " failed; input matched subrule";
             case failReason_regex
                 -> "Input does not match regex: "+typeStr;
             case failReason_regex_group

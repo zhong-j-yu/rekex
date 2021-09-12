@@ -20,6 +20,14 @@ public class PegParserEx2Test extends PegParserTestBase
     public record CoolNumber(int num)
     {
         @Ctor public static
+        CoolNumber fail0() throws SomeException
+        {
+            // if all alternatives failed, the error message is that of the 1st fail.
+            // this ctor is to set up the message in case all failed.
+            throw new SomeException("expecting either a prime or a square");
+        }
+
+        @Ctor public static
         CoolNumber prime(@Regex("[0-9]+")String str) throws SomeException
         {
             int num = Integer.parseInt(str);
@@ -59,7 +67,7 @@ public class PegParserEx2Test extends PegParserTestBase
     @Test
     void test()
     {
-        //dumpResult=true;
+        dumpResult=true;
 
         matchFull("5");
         matchFail("6", 0, 0, 0);
