@@ -33,7 +33,7 @@ public interface ExampleParser_Calculator2
 
     record Factor(int val){
         @Ctor // ( expr )
-        public static Factor parens(@Ch("(")char lp, Expr expr, @Ch(")")char rp){
+        public static Factor parens(@Ch("(")Void lp, Expr expr, @Ch(")")Void rp){
             return new Factor(expr.val);
         }
         @Ctor // unsigned integer

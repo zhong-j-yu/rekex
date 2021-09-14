@@ -363,7 +363,15 @@ If the regex matches the input, it must match exactly 1 code point.
 If the datatype is `char` or `Character`, the code point matched
 must not exceed `0xFFFF`.
 
-### @Regex on Enum
+### @Regex on Void
+
+If you don't care about the characters that matched a regex, use the `Void` type.
+It's typically for tokens that aren't important in the semantic structures,
+for example, the brackets around a Json array
+
+        record JsonArray(@Ch("[")Void bL, SepBy<JsonValue,Comma> values, @Ch("]")Void bR)
+
+### @Regex on Enum values
 
 You can apply @Regex or equivalent on values of an `enum` type; 
 the enum type corresponds to an alternation rule
@@ -448,8 +456,11 @@ use `@Word` instead of `@Ch` or `@Str`.
 
     record JsonArray( @Word("[")char bL, ... ) ...
 
-Be careful though. For example, the starting quote of a Json string cannot be a `@Word`,
-because whitespaces after the quote are characters in the string and cannot be skipped.
+    @Word({"+", "-"}) char op
+
+Be careful not to apply `@Word` on tokens that may be followed by whitespaces
+that cannot be skipped,
+for example, the starting quote of Json string. 
 
 We'll also need to match optional whitespaces in some other places,
 notably leading whitespaces in inputs, which `@Word` doesn't address.
@@ -651,10 +662,21 @@ To find the ctors for a datatype, Rekex first searches the catalog for ctors
 that return the datatype.
 If not found, Rekex searches the class body of the datatype.
 If not found there either, Rekex searches subtypes of the datatype.
-Finally, the canonical constructor is used as the ctor. 
+Without subtypes, the canonical constructor of the datatype is the ctor. 
 
 
+## ParseInfo
 
+`ParseInfo` can be inserted anywhere in a ctor signature; 
+it contains input regions that matched the rule and its direct subrules. 
+
+        public FooBar ctor(Foo foo, Bar bar, ParseInfo info)
+        {
+            System.out.println(info.text()); // FooBar
+            System.out.println(info.of(foo).text());  // Foo
+
+            assert info.start() == info.of(foo).start();
+            assert info.end() == info.of(bar).end();
 
 ## References
 

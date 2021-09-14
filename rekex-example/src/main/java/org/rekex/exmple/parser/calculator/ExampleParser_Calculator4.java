@@ -81,7 +81,7 @@ public interface ExampleParser_Calculator4
             return 1;
         }
 
-        public @N("fact")double fact_1(@Ch("(")char lp, @N("expr")double expr, @Ch(")")char rp)
+        public @N("fact")double fact_1(@Ch("(")Void lp, @N("expr")double expr, @Ch(")")Void rp)
         {
             return expr;
         }

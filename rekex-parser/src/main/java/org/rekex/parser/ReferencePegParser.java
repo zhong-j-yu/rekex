@@ -497,6 +497,8 @@ public class ReferencePegParser<T> implements PegParser<T>
                 return tryGetSingleCodePoint(rule, chars, start, end, g0End, path);
             else if(ct.clazz()==String.class)
                 return new OK(chars.subSequence(start, end).toString(), g0End, null);
+            else if(ct.clazz()==Void.class)
+                return new OK((Void)null, g0End, null);
             else
                 throw new AssertionError();
         }

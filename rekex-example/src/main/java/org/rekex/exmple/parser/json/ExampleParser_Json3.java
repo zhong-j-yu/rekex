@@ -54,7 +54,7 @@ public interface ExampleParser_Json3
         }
 
 
-        public Map<String, Object> object(@Word("{") char PL, SepBy<Member, Comma> members, @Word("}") char PR)
+        public Map<String, Object> object(@Word("{")Void PL, SepBy<Member, Comma> members, @Word("}")Void PR)
         {
             // the following code doesn't work because the API doesn't allow `null` in value
             //   return members.values().stream().collect(Collectors.toMap(Member::name, Member::value)); // throws on duplicate keys
@@ -66,7 +66,7 @@ public interface ExampleParser_Json3
 
         public record Member(String name, @Word(":") char COLON, Object value){}
 
-        public List<Object> array(@Word("[") char PL, SepBy<Object, Comma> values, @Word("]") char PR)
+        public List<Object> array(@Word("[")Void PL, SepBy<Object, Comma> values, @Word("]")Void PR)
         {
             return values.values();
         }
@@ -98,7 +98,7 @@ public interface ExampleParser_Json3
 
         // un-annotated `int` to match a logical json character in strings
 
-        public String string(@Ch(QT) char QL, int[] chars, @Ch(QT) char QR, OptWs trailingWs)
+        public String string(@Ch(QT)Void QL, int[] chars, @Ch(QT)Void QR, OptWs trailingWs)
         {
             return new String(chars, 0, chars.length);
         }
@@ -113,7 +113,7 @@ public interface ExampleParser_Json3
         final static String escV = BS+QT+"/\b\f\n\r\t";
 
         // \b etc
-        public int escC(@Ch(BS) char BSL, @Ch(escN) char c)
+        public int escC(@Ch(BS)Void BSL, @Ch(escN) char c)
         {
             int i = escN.indexOf(c);
             assert i!=-1;
@@ -121,7 +121,7 @@ public interface ExampleParser_Json3
         }
 
         // \u1234
-        public int escU(@Ch(BS) char BSL, @Ch("u") char U, byte h1, byte h2, byte h3, byte h4)
+        public int escU(@Ch(BS)Void BSL, @Ch("u")Void U, byte h1, byte h2, byte h3, byte h4)
         {
             return (h1<<12) | (h2<<8) | (h3<<4) | (h4) ;
         }

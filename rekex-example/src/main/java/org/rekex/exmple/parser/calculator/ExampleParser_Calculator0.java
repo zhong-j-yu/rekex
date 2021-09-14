@@ -21,7 +21,7 @@ public interface ExampleParser_Calculator0
     sealed interface Factor permits Parens, Num{}
 
     // ( expr )
-    record Parens(@Ch("(")char lp, Expr expr, @Ch(")")char rp)
+    record Parens(@Ch("(")Void lp, Expr expr, @Ch(")")Void rp)
         implements Factor{}
 
     // unsigned integer

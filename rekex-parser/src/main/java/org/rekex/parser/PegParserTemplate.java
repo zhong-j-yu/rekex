@@ -507,6 +507,12 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
             return state;
         return state.ok(obj);
     }
+    //** template matchRegexToVoid(ruleId, R0ruleId, datatypeStr, group`0000`) + + + + + + + + + + + + + + + + + + + + + + + + + + +
+    // regex rule for: datatypeStr
+    static _State rule_R0ruleId(_State state)
+    {
+        return match_regex(state, ruleId, pattern_ruleId, 0000);
+    }
     //** template matchRegexToStr(ruleId, R1ruleId, datatypeStr, group`0000`) + + + + + + + + + + + + + + + + + + + + + + + + + + +
     // regex rule for: datatypeStr
     static _State rule_R1ruleId(_State state)

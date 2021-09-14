@@ -96,7 +96,7 @@ class GrammarBuilder
         else if(type instanceof ClassType classType)
         {
             Class<?> clazz = classType.clazz();
-            if(clazz==Character.class || clazz==Integer.class || clazz==String.class)
+            if(clazz==Character.class || clazz==Integer.class || clazz==String.class || clazz==Void.class)
                 return deriveRegexStr(id, classType);
             if(clazz==List.class)
                 return deriveList(id, classType);
@@ -263,7 +263,14 @@ class GrammarBuilder
         if(clazz.isSealed())
         {
             var subclasses = clazz.getPermittedSubclasses();
-            PkgUtil.orderSealedSubclasses(clazz, subclasses);  // throws
+            try
+            {
+                PkgUtil.orderSealedSubclasses(clazz, subclasses);
+            }
+            catch (Exception exception)
+            {
+                throw new Exception("Unable to order subclasses of "+clazz.getName()+"; try @Permits", exception);
+            }
             return deriveAltSubClasses(id, classType, subclasses);
         }
 

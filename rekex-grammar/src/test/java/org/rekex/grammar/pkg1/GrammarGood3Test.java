@@ -72,6 +72,7 @@ public class GrammarGood3Test extends GrammarTestBase
     }
 
     public record Overall(
+        @Ch("abc")Void vd,
         @Ch("abc")char ch,
         @Ch("abc")Character ch2,
         @Ch(range={0,0x10FFFF}) int i,

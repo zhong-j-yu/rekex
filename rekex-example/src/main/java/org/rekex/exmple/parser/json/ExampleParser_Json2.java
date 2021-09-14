@@ -111,7 +111,7 @@ public interface ExampleParser_Json2
             return (JsonElement)alt.value();
         }
 
-        public JsonObject object(@Word("{") char PL, SepBy<Member, Comma> members, @Word("}") char PR)
+        public JsonObject object(@Word("{")Void PL, SepBy<Member, Comma> members, @Word("}")Void PR)
         {
             JsonObject obj = new JsonObject();
             for(var member : members.values())
@@ -123,7 +123,7 @@ public interface ExampleParser_Json2
         // the syntactic structure is defined not here, but by member() ctor.
         public record Member(String name, JsonElement value){}
 
-        public Member member(JsonPrimitive name, @Word(":") char COLON, JsonElement value)
+        public Member member(JsonPrimitive name, @Word(":")Void COLON, JsonElement value)
             throws IllegalArgumentException // semantic predicate
         {
             if(name.object instanceof String str)
@@ -137,7 +137,7 @@ public interface ExampleParser_Json2
             // we could raise an undeclared exception to stop the parsing immediately.
         }
 
-        public JsonArray array(@Word("[") char PL, SepBy<JsonElement, Comma> values, @Word("]") char PR)
+        public JsonArray array(@Word("[")Void PL, SepBy<JsonElement, Comma> values, @Word("]")Void PR)
         {
             JsonArray array = new JsonArray();
             for(var value : values.values())
@@ -170,7 +170,7 @@ public interface ExampleParser_Json2
         // a logical character inside a string literal
         public record JsonChar(int c){}
 
-        public JsonPrimitive string(@Ch(QT) char QL, List<JsonChar> chars, @Ch(QT) char QR, OptWs trailingWs)
+        public JsonPrimitive string(@Ch(QT)Void QL, List<JsonChar> chars, @Ch(QT)Void QR, OptWs trailingWs)
         {
             StringBuilder sb = new StringBuilder(chars.size());
             for(var jc : chars)
@@ -183,7 +183,7 @@ public interface ExampleParser_Json2
             return new JsonChar(c);
         }
 
-        public JsonChar escC(@Ch(BS) char BSL, @Ch(escChars1) char c)
+        public JsonChar escC(@Ch(BS)Void BSL, @Ch(escChars1) char c)
         {
             int i = escChars1.indexOf(c);
             assert i!=-1;
@@ -191,7 +191,7 @@ public interface ExampleParser_Json2
             return new JsonChar(c2);
         }
 
-        public JsonChar escU(@Ch(BS) char BSL, @Ch("u") char U, @Regex("[0-9A-Fa-f]{4}") String hhhh)
+        public JsonChar escU(@Ch(BS)Void BSL, @Ch("u")Void U, @Regex("[0-9A-Fa-f]{4}")String hhhh)
         {
             char c = (char)Integer.parseInt(hhhh, 16);
             return new JsonChar(c);

@@ -906,6 +906,30 @@ public class {className} implements PegParser<{typeArg}>
 
 
 
+    public void matchRegexToVoid(Object ruleId, Object R0ruleId, Object datatypeStr, Object group)
+    {
+        add(this._matchRegexToVoid, 0, 23);
+        add(datatypeStr);
+        add(this._matchRegexToVoid, 36, 60);
+        add(R0ruleId);
+        add(this._matchRegexToVoid, 70, 125);
+        add(ruleId);
+        add(this._matchRegexToVoid, 133, 143);
+        add(ruleId);
+        add(this._matchRegexToVoid, 151, 153);
+        add(group);
+        add(this._matchRegexToVoid, 160, 169);
+    }
+    final String _matchRegexToVoid = """
+    // regex rule for: {datatypeStr}
+    static _State rule_{R0ruleId}(_State state)
+    {
+        return match_regex(state, {ruleId}, pattern_{ruleId}, {group});
+    }
+""";
+
+
+
     public void matchRegexToStr(Object ruleId, Object R1ruleId, Object datatypeStr, Object group)
     {
         add(this._matchRegexToStr, 0, 23);

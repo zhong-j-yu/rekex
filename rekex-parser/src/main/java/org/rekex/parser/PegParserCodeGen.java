@@ -357,6 +357,11 @@ class PegParserCodeGen
             regexToStr=true;
             maker.matchRegexToStr(ruleId, ruleId, datatypeStr, group);
         }
+        else if(rule.datatype() instanceof ClassType ct && ct.clazz()==Void.class)
+        {
+            maker.matchRegexToVoid(ruleId, ruleId, datatypeStr, group);
+            // it simply invokes match_regex() which produces `null`
+        }
         else
         {
             throw new AssertionError("unexpected rule datatype: "+rule.datatype());

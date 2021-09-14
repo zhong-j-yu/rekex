@@ -40,32 +40,32 @@ public class PegParserInfoTest extends PegParserTestBase
             return foo;
         }
 
-        @Ctor public static Foo a(@Ch("a")String ch, ParseInfo info)
+        @Ctor public static Foo a(@Ch("a")Void ch, ParseInfo info)
         {
             return print(info, ch, info);
         }
-        @Ctor public static Foo b(@Ch("b")String ch, Bar bar, ParseInfo info)
+        @Ctor public static Foo b(@Ch("b")Void ch, Bar bar, ParseInfo info)
         {
             return print(info, ch, bar, info);
         }
-        @Ctor public static Foo c(@Ch("c")String ch, Bar bar, ParseInfo info, Bar bar2, ParseInfo info2)
+        @Ctor public static Foo c(@Ch("c")Void ch, Bar bar, ParseInfo info, Bar bar2, ParseInfo info2)
         {
             print(info, ch, bar, info, bar2, info);
             print(info2, ch, bar, info, bar2, info);
             return foo;
         }
-        @Ctor public static Foo d(@Ch("d")String ch, Bar bar, @Ch("\n")String n, Bar bar2, ParseInfo info)
+        @Ctor public static Foo d(@Ch("d")Void ch, Bar bar, @Ch("\n")String n, Bar bar2, ParseInfo info)
         {
             print(info, ch, bar, n, bar2, info);
             return foo;
         }
 
         // check generated source for ctors without ParseInfo
-        @Ctor public static Foo y(@Ch("y")String ch)
+        @Ctor public static Foo y(@Ch("y")Void ch)
         {
             return foo;
         }
-        @Ctor public static Foo z(@Ch("z")String ch, Bar bar)
+        @Ctor public static Foo z(@Ch("z")Void ch, Bar bar)
         {
             return foo;
         }

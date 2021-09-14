@@ -131,12 +131,12 @@ public interface ExampleParser_Uri
     record T_authority(
         Opt<Seq2<
             @Rf("userinfo")String,
-            @Ch("@")String>> opt_userinfo,
+            @Ch("@")Void>> opt_userinfo,
 
         @Rf("host")String host,
 
         Opt<Seq2<
-            @Ch(":")String,
+            @Ch(":")Void,
             @Rf("port")String>> opt_port
     )
     {
@@ -149,15 +149,15 @@ public interface ExampleParser_Uri
     }
 
     // less disgusting...
-    record S_query(@Ch("?")String S, @Rf("query")String query){}
+    record S_query(@Ch("?")Void S, @Rf("query")String query){}
 
-    record S_fragment(@Ch("#")String S, @Rf("fragment")String fragment){}
+    record S_fragment(@Ch("#")Void S, @Rf("fragment")String fragment){}
 
     // the root type
     record T_uri(
         @Rf("scheme")String scheme,
 
-        @Ch(":")String COLON,
+        @Ch(":")Void COLON,
 
         T_hier_part hier_part,
 

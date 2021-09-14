@@ -36,7 +36,7 @@ public interface ExampleParser_Calculator3
             return new Term(val);
         }
 
-        public Factor parens(@Ch("(")char lp, Expr expr, @Ch(")")char rp)
+        public Factor parens(@Ch("(")Void lp, Expr expr, @Ch(")")Void rp)
         {
             return new Factor(expr.val);
         }

@@ -98,14 +98,14 @@ Ctors can be moved to a central *ctor catalog* which can contain ctors of variou
 
         class CtorCatalog
         {
-            public A1 a1(B b, C c){ return ... }
-            public A2 a2(X x, Y y){ return ... }
+            public A a1(B b, C c){ return ... }
+            public A a2(X x, Y y){ return ... }
 
             public B b(...){ return ... } 
             ...
         }
 
-To find ctors for `A`, Rekex first searches the catalog for methods with a compatible return type,
+To find ctors for `A`, Rekex first searches the catalog for methods that returns `A`,
 in this case, `a1` and `a2`.
 
 > The catalog does resemble a conventional grammar definition file,

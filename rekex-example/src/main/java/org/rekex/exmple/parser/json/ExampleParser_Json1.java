@@ -76,9 +76,9 @@ public interface ExampleParser_Json1
     // we play with Either<T1,T2>, basically an adhoc union type T1|T2.
 
     record JsonString(
-        @Ch(QT)char QL,
+        @Ch(QT)Void QL,
         Either<Char1, BsEsc> [] chars,
-        @Ch(QT)char QR,
+        @Ch(QT)Void QR,
         OptWs trailingWs
     )implements JsonValue{}
 
@@ -86,13 +86,13 @@ public interface ExampleParser_Json1
         @Ch(range={0x20, 0x10FFFF}, except=BS+QT) int c){}
 
     record BsEsc(
-        @Ch(BS)char B, Either<EscChar, EscUhhhh> esc){}
+        @Ch(BS)Void B, Either<EscChar, EscUhhhh> esc){}
 
     record EscChar(
         @Ch(escChars1)char c){}
 
     record EscUhhhh(
-        @Ch("u")char U, @Regex("[0-9A-Fa-f]{4}")String hhhh){}
+        @Ch("u")Void U, @Regex("[0-9A-Fa-f]{4}")String hhhh){}
 
     // json number
 
@@ -127,21 +127,21 @@ public interface ExampleParser_Json1
     // composite datatypes -----------------------------------------------------
 
     record JsonObject(
-        @Word("{")char PL,
+        @Word("{")Void PL,
         SepBy<Member, Comma> members,
-        @Word("}")char PR
+        @Word("}")Void PR
     ) implements JsonValue{}
 
     record Member(
         JsonString name,
-        @Word(":") char COLON,
+        @Word(":")Void COLON,
         JsonValue value
     ){}
 
     record JsonArray(
-        @Word("[")char PL,
+        @Word("[")Void PL,
         SepBy<JsonValue, Comma> values,
-        @Word("]")char PR
+        @Word("]")Void PR
     )implements JsonValue{}
 
     // convert to Java String and BigDecimal -------------------------
