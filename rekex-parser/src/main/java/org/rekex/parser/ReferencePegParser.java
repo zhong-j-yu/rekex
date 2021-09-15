@@ -206,11 +206,13 @@ public class ReferencePegParser<T> implements PegParser<T>
 
         // if all alternative failed at input.start,
         // maxFail is the fail of the 1st alternative.
-        // user can provide a better error message in case all failed,
-        // by adding a 1st alternative that
+        // that's not fair to other alternatives.
+        // user can inspect the stack for this situation,
+        // and produce a better error message.
+        //
+        // also possible to introduce the 1st alternative as
         //     syntactically succeeds unconditionally. (epsilon)
-        //     semantically fail unconditionally, with the error message
-        // in future, we can provide easier, declarative ways for error reporting
+        //     semantically fail unconditionally, with an error message
 
         return maxFail;
     }

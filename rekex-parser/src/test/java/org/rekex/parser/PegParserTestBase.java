@@ -6,6 +6,7 @@ import org.rekex.annotype.ClassType;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -141,10 +142,9 @@ public class PegParserTestBase
                                 int failPosition, int[] starts)
     {
         assertEquals(failPosition, resPos, "fail pos\n"+ result);
-        assertEquals(starts.length, stack.size(), "starts don't match\n"+ result);
-        for(int i = 0; i< starts.length; i++)
-            if(starts[i]!= stack.get(i).start())
-                throw new AssertionFailedError("starts don't match\n" + result);
+        List<Integer> list0 = stack.stream().map(node->node.start()).toList();
+        List<Integer> list1 = Arrays.stream(starts).boxed().toList();
+        assertEquals(list0, list1);
     }
 
     protected void matchFatal(String input, int failPosition, int... starts)

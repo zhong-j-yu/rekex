@@ -67,7 +67,7 @@ public class PegParserEx2Test extends PegParserTestBase
     @Test
     void test()
     {
-        dumpResult=true;
+        //dumpResult=true;
 
         matchFull("5");
         matchFail("6", 0, 0, 0);
