@@ -36,6 +36,11 @@ public class PegParserInfoTest extends PegParserTestBase
                         info.end(), info.endLine(), info.endColumn(),
                         info.text());
                 }
+                for(int i=0; i<info0.argCount(); i++)
+                {
+                    var arg = info0.arg(i);
+                    info = info0.ofIndex(i);
+                }
             }
             return foo;
         }

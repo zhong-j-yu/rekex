@@ -21,7 +21,7 @@ public class ParseInfo
     // N+1 positions are retained.
     final CharSequence input;
     final LineCounter lc;
-    final int N;
+    final int argCount;
     final Object[] args;
     final int[] positions;
 
@@ -31,7 +31,7 @@ public class ParseInfo
         this.lc = lc;
 
         assert positions.length == args.length+1;
-        this.N = args.length;
+        this.argCount = args.length;
         this.args = args;
         this.positions = positions;
     }
@@ -47,6 +47,21 @@ public class ParseInfo
     public LineCounter lineCounter()
     {
         return lc;
+    }
+
+    /**
+     * The total number of arguments.
+     */
+    public int argCount()
+    {
+        return argCount;
+    }
+    /**
+     * The argument at `argIndex`, starting from 0.
+     */
+    public Object arg(int argIndex)
+    {
+        return args[argIndex];
     }
 
     /**
@@ -77,7 +92,7 @@ public class ParseInfo
      */
     public int end()
     {
-        return positions[N];
+        return positions[argCount];
     }
 
     /**
@@ -109,7 +124,7 @@ public class ParseInfo
     public ParseInfo of(Object arg)
     {
         int index = -1;
-        for(int i=0; i<N; i++)
+        for(int i = 0; i< argCount; i++)
         {
             if(args[i]==arg) // by obj identity. does not work for primitives.
             {
@@ -122,7 +137,24 @@ public class ParseInfo
         if(index==-1)
             throw new RuntimeException("zero args matched arg %s".formatted(arg));
 
-        return new ParseInfo(input, lc, new Object[]{arg}, new int[]{positions[index], positions[index+1]});
+        return subInfo(index);
+    }
+
+    /**
+     * Info for a particular argument for the ctor,
+     * based on its index in the argument list, starting from 0.
+     */
+    public ParseInfo ofIndex(int argIndex)
+    {
+        if(argIndex<0 || argIndex>= argCount)
+            throw new IllegalArgumentException("invalid argIndex: "+argIndex);
+        return subInfo(argIndex);
+    }
+
+    private ParseInfo subInfo(int index)
+    {
+        return new ParseInfo(input, lc, new Object[]{args[index]},
+            new int[]{positions[index], positions[index+1]});
     }
 
     public String toString()
