@@ -2,7 +2,7 @@
 
 This document specifies how Rekex maps datatypes to grammar rules.
 
-## Annotated Types
+## Annotated-Types
 
 In this document, datatypes are annotated-types of Java 17.
 Annotations mentioned are all type-annotations unless specified otherwise.
@@ -125,8 +125,8 @@ This of course can be confusing and dangerous.
 Summary: to map a datatype to a grammar rule
 - find ctors in the catalog (1)
 - find ctors in the class body (5)
-- ctors from subtypes (7, 8)
-- ctor from canonical constructor (9)
+- infer ctors from subtypes (7, 8)
+- infer ctor from canonical constructor (9)
 - special datatypes are handled by (3) and (4)
 - token datatypes are handled by (2) and (6)
   

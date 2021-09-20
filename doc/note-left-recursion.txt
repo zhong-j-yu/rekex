@@ -1,0 +1,40 @@
+
+A typical example of left-recursion is
+
+e = e "*" e
+  | e "+" e
+  | atom
+
+ANTLR v4 supports it, so users don't have to refactor the grammar
+to introduce symbols for each level of precedence.
+Operator precedence and associativity are implied, not explicit.
+
+However, usually we need to assign names to alternatives anyways
+if we want strongly typed tree nodes
+
+e = e "*" e  #E2
+  | e "+" e  #E1
+  | atom     #E3
+
+Compare it to the refactored grammar
+
+e0 = e1
+e1 = e2 ("+" e2)*
+e2 = e3 ("*" e3)*
+
+It not fair to say the left-recursion version is definitely simpler and more intuitive.
+
+In Rekex, we can express them as
+
+    E1 <-- SepBy1<E2, "+">
+    E2 <-- SepBy1<E3, "*">
+
+This is natural, intuitive, and simple.
+It is also unavoidable, if we have to define datatypes E1, E2 anyway.
+
+Note that children of E1 are E2, of the next level.
+E1 does not contain generic E as children.
+That's not bad; we don't need OOP to eval the children;
+the types of the children are precisely known.
+
+The structure is flat. Associativity is not interpreted by the parser.

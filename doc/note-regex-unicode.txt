@@ -49,3 +49,6 @@ how it matches lone surrogates. Presumably they don't exist in inputs.
 
 If a user attempts to use Java regex to match inputs as arbitrary 16-bit integers,
 not as unicode characters, he's out of luck.
+
+It's ok if inputs are 8-bit integers (chars that don't exceed 0xFF),
+so we can use regex on byte sequence (after converting it to char sequence)
