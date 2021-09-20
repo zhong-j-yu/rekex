@@ -10,28 +10,57 @@ import java.util.function.Function;
 
 public interface ExampleParser_Calculator0
 {
-    // datatypes -----------------------------------------------------
+    // simple arithmetic expressions
+    //
+    //    E0 = E1 ( ("+"|"-") E1) *
+    //    E1 = E2 ( ("*"|"/") E2) *
+    //    E2 = "(" E0 ")" | Num
+    //
+    //  this is in a class of problems of "operator precedence",
+    //  which can be defined in layers
+    //
+    //    E_(i-1) = Ei ( Oi Ei )*
 
-    // terms separated by + or -
-    record Expr(SepBy1<Term, @Ch("+-")String> term_ops){}
+    // In this example, we simply express the grammar in algebraic datatypes;
+    // the parser produces a parse tree,
+    // which is then transformed to its numeric value
 
-    // factors separated by * or /
-    record Term(SepBy1<Factor, @Ch("*/")String> fac_ops){}
+    // grammar as datatypes -----------------------------------------------------
 
-    sealed interface Factor permits Parens, Num{}
+    record Exp0(SepBy1<Exp1, @Ch("+-")String> items){}
 
-    // ( expr )
-    record Parens(@Ch("(")Void lp, Expr expr, @Ch(")")Void rp)
-        implements Factor{}
+    record Exp1(SepBy1<Exp2, @Ch("*/")String> items){}
 
-    // unsigned integer
-    record Num(@Regex("[0-9]+") String str)
-        implements Factor {}
+    sealed interface Exp2 permits Parens, Num{}
+
+    record Parens(@Ch("(")Void lp, Exp0 expr, @Ch(")")Void rp) implements Exp2 {}
+
+    record Num(@Regex("[0-9]+")String str) implements Exp2 {}
 
 
-    // eval -----------------------------------------------------
 
-    static int eval(int x, String op, int y)
+    // eval; transform parse tree to AST; one function for each node type. ---------
+
+    static int eval0(Exp0 e0)
+    {
+        return e0.items().map(e1->eval1(e1)).reduce(x->op->y->calc(x, op, y));
+    }
+
+    static int eval1(Exp1 e1)
+    {
+        return e1.items().map(e2->eval2(e2)).reduce(x->op->y->calc(x, op, y));
+    }
+
+    static int eval2(Exp2 e2)
+    {
+        if(e2 instanceof Parens parens)
+            return eval0(parens.expr());
+        if(e2 instanceof Num num)
+            return Integer.parseInt(num.str);
+        throw new AssertionError();
+    }
+
+    static int calc(int x, String op, int y)
     {
         return switch (op){
             case "+" -> x+y;
@@ -42,43 +71,15 @@ public interface ExampleParser_Calculator0
         };
     }
 
-    static int eval(Expr expr)
-    {
-        return expr.term_ops()
-            .map(term->eval(term))
-            .reduce(x->op->y-> eval(x, op, y));
-    }
-
-    static int eval(Term term)
-    {
-        return term.fac_ops()
-            .map(fac->eval(fac))
-            .reduce(x->op->y-> eval(x, op, y));
-    }
-
-    static int eval(Factor factor)
-    {
-        if(factor instanceof Parens parens)
-            return eval(parens.expr());
-        if(factor instanceof Num num)
-            return eval(num);
-        throw new AssertionError();
-    }
-
-    static int eval(Num num)
-    {
-        return Integer.parseInt(num.str);
-    }
-
     // test -----------------------------------------------------
 
-    public static PegParser<Expr> parser()
+    public static PegParser<Exp0> parser()
     {
-        return PegParser.of(Expr.class);
+        return PegParser.of(Exp0.class);
     }
-    public static Function<Expr,Integer> eval()
+    public static Function<Exp0,Integer> eval()
     {
-        return expr->eval(expr);
+        return expr-> eval0(expr);
     }
 
     public static void main(String[] args) throws Exception

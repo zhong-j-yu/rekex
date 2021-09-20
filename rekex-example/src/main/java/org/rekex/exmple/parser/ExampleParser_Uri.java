@@ -1,8 +1,7 @@
-package org.rekex.exmple.parser.uri;
+package org.rekex.exmple.parser;
 
 import org.rekex.annomacro.AnnoMacro;
 import org.rekex.common_util.AnnoBuilder;
-import org.rekex.exmple.parser.ExampleParserUtil;
 import org.rekex.helper.anno.Ch;
 import org.rekex.helper.anno.Str;
 import org.rekex.helper.datatype.Opt;
@@ -19,13 +18,14 @@ import java.lang.reflect.Field;
 
 import static org.rekex.regexp.RegExpApi.*;
 
-// URI, according to rfc3986
-// URI can be matched by regex alone. but we want to extract parts of URI;
-// and for some parts, we want to know which alt rule produced it.
-// so we introduce datatypes to represent those interesting parts.
-// For other parts, we don't care about their internal rules; just use regex.
 public interface ExampleParser_Uri
 {
+    // URI, according to rfc3986
+    // URI can be matched by regex alone. but we want to extract parts of URI;
+    // and for some parts, we want to know which alt rule produced it.
+    // so we introduce datatypes to represent those interesting parts.
+    // For other parts, we don't care about their internal rules; just use regex.
+
     // all rules in regex -----------------------------------------------
 
     RegExp ALPHA = alt(range(0x41, 0x5A), range(0x61, 0x7A));

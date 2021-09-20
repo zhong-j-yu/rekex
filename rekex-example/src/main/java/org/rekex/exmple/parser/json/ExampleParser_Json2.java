@@ -4,6 +4,7 @@ import org.rekex.annomacro.AnnoMacro;
 import org.rekex.common_util.AnnoBuilder;
 import org.rekex.exmple.parser.ExampleParserUtil;
 import org.rekex.helper.anno.Ch;
+import org.rekex.helper.anno.StrWs;
 import org.rekex.helper.datatype.SepBy;
 import org.rekex.helper.datatype.alt.Alt4;
 import org.rekex.parser.PegParser;
@@ -20,46 +21,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.rekex.exmple.parser.json.ExampleParser_Json1.OptWs;
-import org.rekex.exmple.parser.json.ExampleParser_Json1.Word;
-
-// in this example, we produce ASTs with Gson's JsonElement types.
-// it's a 3rd party library we cannot modify.
-// a rule catalog is used to match Json syntax and produce JsonElement.
 public interface ExampleParser_Json2
 {
-    // tokens --------------------------------------------------------
-
-    enum Comma{ @Word(",") COMMA }
-
-    // we don't care about the internal structure of a number.
-    // create one regex to match the whole thing.
-    // trailing whitespaces are not handled here.
-    @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-    @interface RegexNumber
-    {
-        AnnoMacro<RegexNumber, Regex> toRegex = thiz -> new RegExpApi(){
-            final Regex result;
-            {
-                var digit = range('0', '9') ;
-                var digits = rep1(digit) ;
-                var digitsNZ = seq(range('1', '9'), digits) ;
-                var integer = seq(opt('-'), alt(digitsNZ, digit)) ; // notice the ordering
-                var fraction = seq('.', digits) ;
-                var exponent = seq(ch("Ee"), opt(ch("+-")), digits) ;
-                var number = seq(integer, opt(fraction), opt(exponent)) ;
-                var regex = toRegex(number);
-                result = AnnoBuilder.build(Regex.class, regex);
-            }}.result;
-    }
-
-    // but we do care about the internal structure of a string,
-    // which we'll need to convert it to a java String.
-
-    String BS = "\\";
-    String QT = "\"";
-    String escChars1 = BS+QT+"/bfnrt";
-    String escChars2 = BS+QT+"/\b\f\n\r\t";
+    // in this example, we produce ASTs with Gson's JsonElement types.
+    // it's a 3rd party library we cannot modify.
+    // a ctor catalog is used to match Json syntax and produce AST.
 
     // gson interfaces -----------------------------------------------------
     // we don't want to actually import the whole library just for this example;
@@ -93,12 +59,64 @@ public interface ExampleParser_Json2
         public String toString(){ return "null"; }
     }
 
-    // ignore leading whitespaces in input
+
+
+    // whitespaces ----------------------------------------------------
+
+    String wsChars = " \t\n\r";
+
+    // equivalent to @StrWs, with default whitespace chars
+    @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
+    @interface Word
+    {
+        String[] value();
+        AnnoMacro<Word, StrWs> toStrWs = StrWs.Macro.of(Word::value, wsChars);
+    }
+
+    // zero or more whitespaces
+    enum OptWs{ @Word("")I }
+
+    // leading whitespaces will be ignored (by ctor)
     record Input(JsonElement value){}
 
-    // rules --------------------------------------------------------
 
-    class RulesCatalog
+    // tokens --------------------------------------------------------
+
+    enum Comma{ @Word(",") COMMA }
+
+    // we don't care about the internal structure of a Json number.
+    // create one regex to match the whole thing.
+    // trailing whitespaces are not handled here.
+    @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
+    @interface RegexNumber
+    {
+        AnnoMacro<RegexNumber, Regex> toRegex = thiz -> new RegExpApi(){
+            final Regex result;
+            {
+                var digit = range('0', '9') ;
+                var digits = rep1(digit) ;
+                var digitsNZ = seq(range('1', '9'), digits) ;
+                var integer = seq(opt('-'), alt(digitsNZ, digit)) ; // notice the ordering
+                var fraction = seq('.', digits) ;
+                var exponent = seq(ch("Ee"), opt(ch("+-")), digits) ;
+                var number = seq(integer, opt(fraction), opt(exponent)) ;
+                var regex = toRegex(number);
+                result = AnnoBuilder.build(Regex.class, regex);
+            }}.result;
+    }
+
+    // but we do care about the internal structure of a string,
+    // which we'll need to convert it to a java String.
+
+    String BS = "\\";
+    String QT = "\"";
+    String escChars1 = BS+QT+"/bfnrt";
+    String escChars2 = BS+QT+"/\b\f\n\r\t";
+
+
+    // ctors -----------------------------------------------------------------------------
+
+    class CtorCatalog
     {
         public Input input(OptWs leadingWs, JsonElement value)
         {
@@ -120,7 +138,7 @@ public interface ExampleParser_Json2
         }
 
         // intermediary data carrier; won't be present in the final AST.
-        // the syntactic structure is defined not here, but by member() ctor.
+        // its syntactic structure is defined by ctor member().
         public record Member(String name, JsonElement value){}
 
         public Member member(JsonPrimitive name, @Word(":")Void COLON, JsonElement value)
@@ -201,7 +219,7 @@ public interface ExampleParser_Json2
     // test --------------------------------------------------------
     public static PegParser<Input> parser()
     {
-        return PegParser.of(Input.class, RulesCatalog.class, new RulesCatalog());
+        return PegParser.of(Input.class, CtorCatalog.class, new CtorCatalog());
     }
 
     public static void main(String[] args)

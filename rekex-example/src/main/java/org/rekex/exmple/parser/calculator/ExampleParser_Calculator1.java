@@ -13,11 +13,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.function.Function;
 
-// separate tokenizer
-// whitespaces: optional Space/Tab between tokens
-// eval logics are defined in place.
 public interface ExampleParser_Calculator1
 {
+    // in this example:
+    //   - whitespaces: optional Space/Tab between tokens
+    //   - token datatypes are extracted
+    //   - eval() defined inside datatypes
+
+
     // whitespaces ----------------------------------------------------
 
     String wsChars = " \t";
@@ -33,9 +36,12 @@ public interface ExampleParser_Calculator1
     // zero or more whitespaces
     enum OptWs{ @Word("")I }
 
+    record Input(OptWs leadingWs, Exp0 e0){}
+
     // tokens --------------------------------------------------------
 
-    enum TermOp {
+    enum Op1
+    {
         @Word("+") plus,
         @Word("-") minus;
 
@@ -43,7 +49,8 @@ public interface ExampleParser_Calculator1
             return this==plus ? x+y : x-y;
         }
     }
-    enum FactorOp {
+    enum Op2
+    {
         @Word({"/","÷"}) div,
         @Word({"*","×"}) mul,
         @Word("") mul_implicit; // fac1 fac2 == fac1 * fac2
@@ -56,44 +63,37 @@ public interface ExampleParser_Calculator1
     enum PL { @Word("(")I }
     enum PR { @Word(")")I }
 
-    // one or more digits; skip trailing whitespaces.
     record Digits(@Regex("[0-9]+")String str, OptWs trailingWs){
         public int toInt(){ return Integer.parseInt(str); }
     }
 
-    record Input(OptWs leadingWs, Expr expr){}
+    // composite datatypes -----------------------------------------------------
 
-    // datatypes -----------------------------------------------------
-
-    record Expr(SepBy1<Term, TermOp> term_ops)
+    record Exp0(SepBy1<Exp1, Op1> items)
     {
         public int eval() {
-            return term_ops()
-                .map(Term::eval)
-                .reduce(x->op->y->op.eval(x,y));
+            return items().map(Exp1::eval).reduce(x->op->y->op.eval(x,y));
         }
     }
 
-    record Term(SepBy1<Factor, FactorOp> fac_ops)
+    record Exp1(SepBy1<Exp2, Op2> items)
     {
         public int eval() {
-            return fac_ops()
-                .map(Factor::eval)
-                .reduce(x->op->y->op.eval(x,y));
+            return items().map(Exp2::eval).reduce(x->op->y->op.eval(x,y));
         }
     }
 
-    sealed interface Factor
+    sealed interface Exp2 permits Parens, Num
     {
         public int eval();
     }
 
-    record Parens(PL lp, Expr expr, PR rp) implements Factor
+    record Parens(PL lp, Exp0 expr, PR rp) implements Exp2
     {
         public int eval() { return expr.eval(); }
     }
 
-    record Num(Digits digits) implements Factor
+    record Num(Digits digits) implements Exp2
     {
         public int eval() { return digits.toInt(); }
     }
@@ -106,7 +106,7 @@ public interface ExampleParser_Calculator1
     }
     public static Function<Input,Integer> eval()
     {
-        return (input)->input.expr.eval();
+        return (input)->input.e0.eval();
     }
 
     public static void main(String[] args) throws Exception

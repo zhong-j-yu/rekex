@@ -9,51 +9,61 @@ import org.rekex.spec.Regex;
 
 import java.util.function.Function;
 
-// aggressively thinning parse tree nodes, storing only the int value
 public interface ExampleParser_Calculator2
 {
+    // aggressively thinning tree nodes
+    //
+    // canonical constructors only store numeric values;
+    // explicit @Ctor ones are defined to express grammar rules
+
     // datatypes -----------------------------------------------------
 
-    record Expr(int val){
-        @Ctor // terms separated by + or -
-        public Expr(SepBy1<Term, @Ch("+-")String> term_ops){
-            this(term_ops.map(Term::val)
-                .reduce(x->op->y->eval(x, op, y)));
-        }
-    }
-
-
-    record Term(int val){
-        @Ctor // factors separated by * or /
-        public Term(SepBy1<Factor, @Ch("*/")String> fac_ops){
-            this(fac_ops.map(Factor::val)
-                .reduce(x->op->y->eval(x, op, y)));
-        }
-    }
-
-    record Factor(int val){
-        @Ctor // ( expr )
-        public static Factor parens(@Ch("(")Void lp, Expr expr, @Ch(")")Void rp){
-            return new Factor(expr.val);
-        }
-        @Ctor // unsigned integer
-        public static Factor num(@Regex("[0-9]+") String str){
-            return new Factor(Integer.parseInt(str));
-        }
-    }
-
-    static int eval(int x, String op, int y)
+    record Exp0(int val)
     {
-        return ExampleParser_Calculator0.eval(x, op, y);
+        @Ctor public Exp0(SepBy1<Exp1, @Ch("+-")String> term_ops)
+        {
+            this(term_ops.map(Exp1::val).reduce(x->op->y->calc(x, op, y)));
+        }
+    }
+
+
+    record Exp1(int val)
+    {
+        @Ctor public Exp1(SepBy1<Exp2, @Ch("*/")String> fac_ops)
+        {
+            this(fac_ops.map(Exp2::val).reduce(x->op->y->calc(x, op, y)));
+        }
+    }
+
+    record Exp2(int val)
+    {
+        // we don't need two subtypes for Exp2; just define two ctors.
+
+        @Ctor public static
+        Exp2 parens(@Ch("(")Void lp, Exp0 expr, @Ch(")")Void rp)
+        {
+            return new Exp2(expr.val);
+        }
+
+        @Ctor public static
+        Exp2 num(@Regex("[0-9]+") String str)
+        {
+            return new Exp2(Integer.parseInt(str));
+        }
+    }
+
+    static int calc(int x, String op, int y)
+    {
+        return ExampleParser_Calculator0.calc(x, op, y);
     }
 
     // test -----------------------------------------------------
 
-    public static PegParser<Expr> parser()
+    public static PegParser<Exp0> parser()
     {
-        return PegParser.of(Expr.class);
+        return PegParser.of(Exp0.class);
     }
-    public static Function<Expr,Integer> eval()
+    public static Function<Exp0,Integer> eval()
     {
         return expr->expr.val;
     }

@@ -17,12 +17,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.math.BigDecimal;
 
-// parse tree datatype JsonValue and subtypes
-// syntax rules are define by class constructors.
-// nodes contain syntax stuff like comma; not thinned.
 public interface ExampleParser_Json1
 {
-    sealed interface JsonValue{}
+    // define Json grammar in algebraic datatypes,
+    // producing a statically-typed parse tree
 
     // whitespaces ----------------------------------------------------
 
@@ -45,9 +43,32 @@ public interface ExampleParser_Json1
     // tokens --------------------------------------------------------
 
     enum Comma{ @Word(",") COMMA }
+
     // we could define enums for all separators like "{", ":"
     // but they are used only once in grammar, so we don't bother.
     // maybe it is nicer to define them all here for clarity.
+
+    // composite datatypes --------------------------------------------
+
+    sealed interface JsonValue{} // permits clause is omitted
+
+    record JsonObject(
+        @Word("{")Void PL,
+        SepBy<Member, Comma> members,
+        @Word("}")Void PR
+    ) implements JsonValue{}
+
+    record Member(
+        JsonString name,
+        @Word(":")Void COLON,
+        JsonValue value
+    ){}
+
+    record JsonArray(
+        @Word("[")Void PL,
+        SepBy<JsonValue, Comma> values,
+        @Word("]")Void PR
+    )implements JsonValue{}
 
     // simple literals ------------------------------------------------
 
@@ -73,7 +94,7 @@ public interface ExampleParser_Json1
     String escChars2 = BS+QT+"/\b\f\n\r\t";
 
     // as an example, instead of introducing a supertype for T1,T2,
-    // we play with Either<T1,T2>, basically an adhoc union type T1|T2.
+    // we play with Either<T1,T2>, an adhoc union type T1|T2.
 
     record JsonString(
         @Ch(QT)Void QL,
@@ -124,27 +145,19 @@ public interface ExampleParser_Json1
     ){}
 
 
-    // composite datatypes -----------------------------------------------------
+    // test --------------------------------------------------------
+    public static PegParser<Input> parser()
+    {
+        return PegParser.of(Input.class);
+    }
 
-    record JsonObject(
-        @Word("{")Void PL,
-        SepBy<Member, Comma> members,
-        @Word("}")Void PR
-    ) implements JsonValue{}
+    public static void main(String[] args)
+    {
+        ExampleParserUtil.testInputs("Json1", parser(), input->input.value);
+    }
 
-    record Member(
-        JsonString name,
-        @Word(":")Void COLON,
-        JsonValue value
-    ){}
 
-    record JsonArray(
-        @Word("[")Void PL,
-        SepBy<JsonValue, Comma> values,
-        @Word("]")Void PR
-    )implements JsonValue{}
-
-    // convert to Java String and BigDecimal -------------------------
+    // convert Json string and number to Java String and BigDecimal -------------------------
 
     static String toJavaString(JsonString jStr)
     {
@@ -163,7 +176,7 @@ public interface ExampleParser_Json1
     // we'll reconstruct the whole string from parts, hand it to another parser.
     // this is rather silly.
     // In later examples, we'll use one regex to match the entire number.
-    // Alternatively, use ParseInfo to retrieve the text that matches JsonNumber.
+    // Alternatively, use ParseInfo to retain the text that matches JsonNumber.
     static BigDecimal toBigDecimal(JsonNumber jn)
     {
         StringBuffer sb = new StringBuffer();
@@ -188,14 +201,5 @@ public interface ExampleParser_Json1
         return new BigDecimal(sb.toString());
     }
 
-    // test --------------------------------------------------------
-    public static PegParser<Input> parser()
-    {
-        return PegParser.of(Input.class);
-    }
 
-    public static void main(String[] args)
-    {
-        ExampleParserUtil.testInputs("Json1", parser(), input->input.value);
-    }
 }

@@ -13,43 +13,41 @@ import java.lang.annotation.*;
 import java.util.Set;
 import java.util.function.Function;
 
-// instead of wrapper types like `record Term(int)`,
-// use annotated primitive types like `@Term int`
 public interface ExampleParser_Calculator4
 {
-    class RulesCatalog
+    // rules, designed in a way that every phrase can be mirrored by a primitive value.
+    //
+    // expr  -> term termR
+    // termR -> +- term termR | ""
+    // term  -> fact factR
+    // factR -> */ fact factR | ""
+    // fact  -> ( expr ) | digits
+    // digits-> digit digitR
+    // digitR-> digit digitR  | ""
+    // digit -> 0-9
+
+
+    // use annotated primitive types to represent grammar symbols,
+    // e.g. @N("expr")double
+    @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
+    @interface N{ String value(); }
+
+    // It is going to be painfully obvious that N.value always agrees
+    // with the parameter name or the method name, thus redundant.
+    // We could derive a grammar from identifiers only, e.g.
+    //     double term(double factor);  double factor(...);
+    // which represents rules:  term->factor, factor->...
+    // That is beautiful; could be another useful project.
+    //
+    // However, we need @N, in this example, only because we use 1 primitive type
+    // to represent different things. Most grammars probably require
+    // distinct Types for different things, thus don't need annotations anyway.
+    //
+    // the point of this example, besides inducing double visions,
+    // is to examine the *possibility*, not to encourage.
+
+    class CtorCatalog
     {
-        // to annotate primitive types, creating distinct annotated types.
-        // instead creating @Expr etc, just use @N("expr")
-
-        @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
-        public @interface N{ String value(); }
-
-        // It is going to be painfully obvious that N.value always agrees
-        // with the parameter name or the method name, thus redundant.
-        // We could derive a grammar from identifiers only, e.g.
-        //     double term(double factor);  double factor(...);
-        // which represents rules:  term->factor, factor->...
-        // That is beautiful; could be another useful project.
-        //
-        // However, we need @N, in this example, only because we use 1 primitive type
-        // to represent different things. Most grammars probably require
-        // distinct Types for different things, thus don't need annotations anyway.
-        //
-        // the point of this example, besides triggering brain freezes,
-        // is to examine the *possibility* of it; not to encourage it.
-
-        // rules
-        //
-        // expr  -> term termR
-        // termR -> +- term termR | ""
-        // term  -> fact factR
-        // factR -> */ fact factR | ""
-        // fact  -> ( expr ) | digits
-        // digits-> digit digitR
-        // digitR-> digit digitR  | ""
-        // digit -> 0-9
-
 
         public @N("expr")double expr(@N("term")double term, @N("termR")double termR)
         {
@@ -74,7 +72,7 @@ public interface ExampleParser_Calculator4
         public @N("factR")double factR_1(@Ch("*/")char op, @N("fact")double fact, @N("factR")double factR)
         {
             return op=='*' ? factR*fact : factR/fact; // A/B*C=C/B*A
-            // that doesn't work for integer divisions. (not precise for doubles either)
+            // it doesn't work for integer divisions. (not precise for doubles either)
         }
         public @N("factR")double factR_2()
         {
@@ -91,9 +89,9 @@ public interface ExampleParser_Calculator4
             return digits.value;
         }
 
-        // this can be replaced by `long`, so that we create zero Objects during parsing.
-        // keep this class for now to see more clearly how digits are concatenated.
         public record Digits(int count, int value){}
+        // it can be replaced by `long`, so that only primitives are referenced by ctors.
+        // keep this class for now to see more clearly how digits are concatenated.
 
         public @N("digits")Digits digits(@N("digit")int digit, @N("digitR")Digits digitR)
         {
@@ -134,13 +132,13 @@ public interface ExampleParser_Calculator4
     public static PegParser<Double> parser()
     {
         // @N("expr")double
-        Annotation n_expr = AnnoBuilder.build(RulesCatalog.N.class, "expr");
+        Annotation n_expr = AnnoBuilder.build(N.class, "expr");
         AnnoType type = new PrimitiveType(Set.of(n_expr), double.class);
 
         return new PegParserBuilder()
             .rootType(type)
-            .catalogClass(RulesCatalog.class)
-            .build(new RulesCatalog());
+            .catalogClass(CtorCatalog.class)
+            .build(new CtorCatalog());
     }
     public static Function<Double, Double> eval()
     {

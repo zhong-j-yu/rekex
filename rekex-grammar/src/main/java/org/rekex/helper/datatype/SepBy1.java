@@ -17,18 +17,6 @@ public record SepBy1<T, S>
     implements SepBy<T,S>
 {
 
-    public <R> R reduce(Function<T,R> f0, Function<R, Function<S, Function<T, R>>> fRest)
-    {
-        R r = f0.apply(values.get(0));
-        for(int i=0; i<separators.size(); i++)
-        {
-            S sep = separators.get(i);
-            T val = values.get(i+1);
-            r = fRest.apply(r).apply(sep).apply(val);
-        }
-        return r;
-    }
-
     public <R> SepBy1<R, S> map(Function<T, R> func)
     {
         var valuesR = values().stream().map(func).toList();
