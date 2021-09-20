@@ -6,7 +6,6 @@ import org.rekex.helper.anno.Str;
 import org.rekex.parser.ParseInfo;
 import org.rekex.parser.PegParserTestBase;
 import org.rekex.spec.Ctor;
-import org.rekex.spec.Not;
 
 public class PegParserInfoTest extends PegParserTestBase
 {
@@ -22,27 +21,33 @@ public class PegParserInfoTest extends PegParserTestBase
 
         static Foo print(ParseInfo info, Object... args)
         {
-            if(false)
+            var input = info.input();
+            printf("input=(%d,%d)`%s`, start=%d(%d,%d) end=%d(%d,%d) %n",
+                input.start(), input.end(), input.chars(),
+                info.start(), info.startLine(), info.startColumn(),
+                info.end(), info.endLine(), info.endColumn());
+            var info0 = info;
+            for(Object arg : args)
             {
-                System.out.printf("input=%s, start=%d(%d,%d) end=%d(%d,%d) %n", info.input(),
+                info = info0.of(arg);
+                printf(": %d(%d,%d) - %d(%d,%d) %s %n",
                     info.start(), info.startLine(), info.startColumn(),
-                    info.end(), info.endLine(), info.endColumn());
-                var info0 = info;
-                for(Object arg : args)
-                {
-                    info = info0.of(arg);
-                    System.out.printf(": %d(%d,%d) - %d(%d,%d) %s %n",
-                        info.start(), info.startLine(), info.startColumn(),
-                        info.end(), info.endLine(), info.endColumn(),
-                        info.text());
-                }
-                for(int i=0; i<info0.argCount(); i++)
-                {
-                    var arg = info0.arg(i);
-                    info = info0.ofIndex(i);
-                }
+                    info.end(), info.endLine(), info.endColumn(),
+                    info.text());
             }
+            for(int i=0; i<info0.argCount(); i++)
+            {
+                var arg = info0.arg(i);
+                info = info0.ofIndex(i);
+            }
+
             return foo;
+        }
+        static void printf(String format, Object... args)
+        {
+            String s = format.formatted(args);
+            if(false)
+                System.out.print(s);
         }
 
         @Ctor public static Foo a(@Ch("a")Void ch, ParseInfo info)

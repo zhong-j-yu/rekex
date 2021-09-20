@@ -270,7 +270,7 @@ Some special datatypes are natively recognized by Rekex as representing certain 
 - `List<E>` and `E[]` represent repetition *(e&#42;)* ,
   optionally annotated with min/max sizes
 
-
+- `ParseInfo` matches ε and can be inserted anywhere in a ctor to receive syntactic information. 
 
 ## Token datatypes
 

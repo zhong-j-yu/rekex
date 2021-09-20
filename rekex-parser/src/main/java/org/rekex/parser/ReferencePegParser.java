@@ -55,7 +55,7 @@ public class ReferencePegParser<T> implements PegParser<T>
     public ParseResult<T> parse(CharSequence chars, int start, int end)
     {
         Integer ruleId = grammar.typeToId().get(rootType);
-        Input input = new Input(chars, start, end, new Path(List.of()), new LineCounter(chars));
+        Input input = new Input(chars, start, end, new Path(List.of()), new InputInfo(chars, start, end));
 
         Result result;
         try
@@ -98,9 +98,12 @@ public class ReferencePegParser<T> implements PegParser<T>
         }
     }
 
-    record Input(CharSequence chars, int start, int end, Path path, LineCounter lc)
+    record Input(CharSequence chars, int start, int end, Path path, InputInfo info)
     {
-
+        Input advance(int newStart)
+        {
+            return new Input(chars, newStart, end, path, info);
+        }
     }
 
     sealed interface Result
@@ -183,7 +186,7 @@ public class ReferencePegParser<T> implements PegParser<T>
     {
         var rule = grammar.idToRule().get(ruleId);
         Path path = input.path.append(rule, input.start, subIndex);
-        input = new Input(input.chars, input.start, input.end, path, input.lc);
+        input = new Input(input.chars, input.start, input.end, path, input.info);
         return matchRule.apply(rule).apply(input);
     }
 
@@ -232,7 +235,7 @@ public class ReferencePegParser<T> implements PegParser<T>
 
             Result result;
             if(subRule.datatype().equals(ClassType.of(ParseInfo.class))) // special handling
-                result = new OK(new ParseInfo(input0.chars, input0.lc, args, positions), inputX.start, maxFail);
+                result = new OK(new ParseInfo(input0.info, args, positions), inputX.start, maxFail);
             else
                 result = match(subId, inputX, subIndex);
 
@@ -244,7 +247,7 @@ public class ReferencePegParser<T> implements PegParser<T>
             OK ok = (OK)result;
             args[subIndex] = ok.obj;
             positions[subIndex+1] = ok.pos;
-            inputX = new Input(inputX.chars, ok.pos, inputX.end, input0.path, input0.lc);
+            inputX = inputX.advance(ok.pos);
         }
 
         // fail pos is set at the start of the matched region.
@@ -283,7 +286,7 @@ public class ReferencePegParser<T> implements PegParser<T>
 
             OK ok = (OK)result;
             args.add(ok.obj);
-            inputX = new Input(inputX.chars, ok.pos, inputX.end, input0.path, input0.lc);
+            inputX = inputX.advance(ok.pos);
         }
 
         // we have collected enough args. we try to greedily match more args.
@@ -303,7 +306,7 @@ public class ReferencePegParser<T> implements PegParser<T>
             else
             {
                 args.add(ok.obj);
-                inputX = new Input(inputX.chars, ok.pos, inputX.end, input0.path, input0.lc);
+                inputX = inputX.advance(ok.pos);;
             }
         }
 

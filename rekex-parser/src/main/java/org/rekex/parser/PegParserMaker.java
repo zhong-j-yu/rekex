@@ -121,11 +121,11 @@ public class {className} implements PegParser<{typeArg}>
     {
         add(this._fileHeader3, 0, 38);
         add(typeArg);
-        add(this._fileHeader3, 47, 594);
+        add(this._fileHeader3, 47, 671);
         add(typeArg);
-        add(this._fileHeader3, 603, 1207);
+        add(this._fileHeader3, 680, 1284);
         add(catalogClass);
-        add(this._fileHeader3, 1221, 5294);
+        add(this._fileHeader3, 1298, 5204);
     }
     final String _fileHeader3 = """
 
@@ -137,6 +137,7 @@ public class {className} implements PegParser<{typeArg}>
         state.chars = chars;
         state.start = start;
         state.end = end;
+        state.inputInfo = new org.rekex.parser.InputInfo(chars, start, end);
 
         try
         {
@@ -171,13 +172,7 @@ public class {className} implements PegParser<{typeArg}>
         int start;
         int end;
 
-        org.rekex.parser.LineCounter lc;
-        org.rekex.parser.LineCounter lc()
-        {
-            if(lc==null)
-                lc = new org.rekex.parser.LineCounter(chars);
-            return lc;
-        }
+        org.rekex.parser.InputInfo inputInfo;
 
         boolean fail;
         // if fail==false, match is success, obj is set (null is allowed)
@@ -464,11 +459,11 @@ public class {className} implements PegParser<{typeArg}>
         add(subIndex2);
         add(this._matchParseInfo, 36, 43);
         add(ParseInfo);
-        add(this._matchParseInfo, 54, 97);
+        add(this._matchParseInfo, 54, 89);
     }
     final String _matchParseInfo = """
 
-        {ParseInfo} arg_{subIndex2} = new {ParseInfo}(state.chars, state.lc(), argArr, posArr);
+        {ParseInfo} arg_{subIndex2} = new {ParseInfo}(state.inputInfo, argArr, posArr);
 """;
 
 

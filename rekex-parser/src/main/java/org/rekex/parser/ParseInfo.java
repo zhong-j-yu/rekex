@@ -9,26 +9,26 @@ import java.util.Arrays;
  */
 public class ParseInfo
 {
-    // syntactically this datatype matches epsilon;
-    // the grammar builder sees it as a normal datatype.
-    // It is the specific parser that handles it specially.
+    // Syntactically this datatype matches epsilon, so it can be inserted anywhere.
+    // The grammar builder sees it as a normal datatype.
+    // The parser treats it specially.
     @Ctor public static ParseInfo ctor()
     {
         throw new AssertionError("should not be invoked");
     }
 
+    final InputInfo input;
+
     // this datatype can be inserted anywhere in any ctor with N arguments;
-    // N+1 positions are retained.
-    final CharSequence input;
-    final LineCounter lc;
+    // N+1 positions are retained for this node and direct sub nodes.
+    // later we could also add the stack of parent symbols and start positions.
     final int argCount;
     final Object[] args;
     final int[] positions;
 
-    public ParseInfo(CharSequence input, LineCounter lc, Object[] args, int[] positions)
+    public ParseInfo(InputInfo input, Object[] args, int[] positions)
     {
         this.input = input;
-        this.lc = lc;
 
         assert positions.length == args.length+1;
         this.argCount = args.length;
@@ -37,17 +37,14 @@ public class ParseInfo
     }
 
     /**
-     * The whole original input
+     * The input information.
      */
-    public CharSequence input()
+    public InputInfo input()
     {
         return input;
     }
 
-    public LineCounter lineCounter()
-    {
-        return lc;
-    }
+    private LineCounter lc(){ return input.lineCounter(); }
 
     /**
      * The total number of arguments.
@@ -77,14 +74,14 @@ public class ParseInfo
      */
     public int startLine()
     {
-        return lc.line(start());
+        return lc().line(start());
     }
     /**
      * The column number of the start position
      */
     public int startColumn()
     {
-        return lc.column(start());
+        return lc().column(start());
     }
 
     /**
@@ -100,14 +97,14 @@ public class ParseInfo
      */
     public int endLine()
     {
-        return lc.line(end());
+        return lc().line(end());
     }
     /**
      * The column number of the end position
      */
     public int endColumn()
     {
-        return lc.column(end());
+        return lc().column(end());
     }
 
     /**
@@ -115,7 +112,7 @@ public class ParseInfo
      */
     public CharSequence text()
     {
-        return input.subSequence(start(), end());
+        return input.chars.subSequence(start(), end());
     }
 
     /**
@@ -153,7 +150,7 @@ public class ParseInfo
 
     private ParseInfo subInfo(int index)
     {
-        return new ParseInfo(input, lc, new Object[]{args[index]},
+        return new ParseInfo(input, new Object[]{args[index]},
             new int[]{positions[index], positions[index+1]});
     }
 

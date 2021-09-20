@@ -50,6 +50,7 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
         state.chars = chars;
         state.start = start;
         state.end = end;
+        state.inputInfo = new org.rekex.parser.InputInfo(chars, start, end);
 
         try
         {
@@ -85,13 +86,7 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
         int start;
         int end;
 
-        org.rekex.parser.LineCounter lc;
-        org.rekex.parser.LineCounter lc()
-        {
-            if(lc==null)
-                lc = new org.rekex.parser.LineCounter(chars);
-            return lc;
-        }
+        org.rekex.parser.InputInfo inputInfo;
 
         boolean fail;
         // if fail==false, match is success, obj is set (null is allowed)
@@ -314,7 +309,7 @@ public class PegParserTemplate implements PegParser</*typeArg*/Void>
         TypeName arg_subIndex = state.pickObj();
         //** template matchParseInfo(subIndex2, ParseInfo) + + + + + + + + + + + + + + + + + + + + + + + + + +
 
-        ParseInfo arg_subIndex2 = new ParseInfo(state.chars, state.lc(), argArr, posArr);
+        ParseInfo arg_subIndex2 = new ParseInfo(state.inputInfo, argArr, posArr);
         //** template concatSubRuleParseInfo(subIndex) + + + + + + + + + + + + + +
         argArr[subIndex] = arg_subIndex;
         posArr[subIndex+1] = state.start;
