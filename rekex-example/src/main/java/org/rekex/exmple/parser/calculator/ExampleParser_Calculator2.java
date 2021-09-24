@@ -14,7 +14,7 @@ public interface ExampleParser_Calculator2
     // aggressively thinning tree nodes
     //
     // canonical constructors only store numeric values;
-    // explicit @Ctor ones are defined to express grammar rules
+    // explicit ctors are declared to express grammar rules
 
     // datatypes -----------------------------------------------------
 

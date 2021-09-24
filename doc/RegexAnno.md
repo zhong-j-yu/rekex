@@ -6,11 +6,11 @@ to match inputs with regular expressions.
 It has the following attributes:
 
 - `Regex.value` - the regular expression string, 
-  as defined by [java.util.regex.Pattern](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html)
+  as defined by [java.util.regex.Pattern](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/regex/Pattern.html)
 - `Regex.flags` -deafult to 0; 
-  see [Pattern.flags()](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html#flags())
+  see [Pattern.flags()](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/regex/Pattern.html#flags())
 - `Regex.group` - the group number of the capturing group to be extracted, default to 0;
-   see [Matcher.group(group)](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Matcher.html#group(int)) 
+   see [Matcher.group(group)](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/regex/Matcher.html#group(int)) 
 
 In the example of `@Regex(value="(true)\\s*", group=1) String`,
 the regular expression matches and consumes any input with literal `"true"`

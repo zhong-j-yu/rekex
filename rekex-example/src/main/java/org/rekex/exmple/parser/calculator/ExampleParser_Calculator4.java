@@ -15,7 +15,7 @@ import java.util.function.Function;
 
 public interface ExampleParser_Calculator4
 {
-    // rules, designed in a way that every phrase can be mirrored by a primitive value.
+    // grammar, designed in a way that every symbol can be mirrored by a primitive value.
     //
     // expr  -> term termR
     // termR -> +- term termR | ""
@@ -27,8 +27,7 @@ public interface ExampleParser_Calculator4
     // digit -> 0-9
 
 
-    // use annotated primitive types to represent grammar symbols,
-    // e.g. @N("expr")double
+    // use annotated primitive types to represent grammar symbols, e.g. @N("expr")double
     @Target(ElementType.TYPE_USE)@Retention(RetentionPolicy.RUNTIME)
     @interface N{ String value(); }
 

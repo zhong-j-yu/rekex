@@ -1,5 +1,5 @@
 
-# Rekex - grammar rules as algebraic datatypes
+# Rekex - grammar as algebraic datatypes
 
 A context-free grammar has the form of
 
@@ -7,7 +7,7 @@ A context-free grammar has the form of
     A1 = B C
     ...
 
-which looks very much like definitions of algebraic datatypes.
+which looks exactly like definitions of algebraic datatypes.
 This is by no coincidence - both formalisms reflect an underlying
 model with which we build complex concepts from constituents. 
 
@@ -27,12 +27,13 @@ eventually outputting a parse tree in the very same datatypes.
 
     A a = parser.matchFull(input);
 
-**Rekex** implements this novel idea for Java 17,
-addressing issues of practical concerns,
-proving that it is an elegant approach to making parsers.
+**Rekex** is a PEG parser generator that implements this novel idea for Java 17.
+It is the simplest, most intuitive way for writing parsers.
 
 Read More:
 
+- [Introduction](doc/Intro.md)
+  
 - [User's Guide](doc/UsersGuide.md)
   
 - [Specification](doc/Spec.md)

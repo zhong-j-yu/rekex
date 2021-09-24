@@ -1,37 +1,12 @@
 
 # Rekex User's Guide
 
-## Introduction
-
-Rekex is a parser generator that derives grammar rules
-from datatypes of the target parse tree.
-
-The current version of Rekex depends on [Java 17](http://jdk.java.net/17/) 
-(for `sealed` and `record` types);
-supports Parsing Expression Grammar (PEG); 
-and provides a recursive decent parser implementation. 
-
-PEG grammar rules are expressed in Java types in the following ways
-- alternation and concatenation rules as type hierarchies and constructor/method signatures
-- repetition rules as `List<E>` or `E[]`
-- positive/negative lookaheads as `Peek<E>` and `Not<E>`
-- terminal matching as `@Regex` annotated types
-
-A minimum example that matches `true` or `false`
-
-        enum Bool
-        {
-            @Str("true") TRUE,
-            @Str("false") FALSE,
-        }
-
-        PegParser<Bool> parser = PegParser.of(Bool.class);
-        Bool bool = parser.matchFull("true");
-
-
-Given the root datatype of the parse tree, Rekex derives grammar rules recursively, 
-and generates a parser for the rules;
-the parser in action invokes constructors/methods of datatypes to build the parse tree.
+Rekex is a 
+[PEG](https://en.wikipedia.org/wiki/Parsing_expression_grammar) 
+parser generator for Java 17.
+The distinguishing feature of Rekex is that
+grammars are modeled in user-defined datatypes.
+See [Introduction](./Intro.md) for a more detailed explanation of the design.
 
 Maven dependency:
 
@@ -41,10 +16,93 @@ Maven dependency:
             <version>1.1.0</version>
         </dependency>
 
-## Alteration Rule as Subtyping
+A quick example for a parser that matches strings of 0s and 1s:
 
-As an example let's build a Json parser, according to the grammar on [json.org](https://www.json.org) .
-The root type will be `JsonValue`, which has subtypes `JsonObject`, `JsonArray`, etc.
+        // binary = bit*
+        // bit = "0" | "1"
+                          
+        record Binary(List<Bit> bits){}
+
+        enum Bit{
+            @Ch("0") v0,
+            @Ch("1") v1,
+        }
+
+        PegParser<Binary> parser = PegParser.of(Binary.class);
+        Binary result = parser.matchFull("0101");
+        print(result.bits().get(3));
+
+
+
+# PART I -- Grammar as Algebraic Datatypes
+
+A PEG grammar can be expressed as a collection of algebraic datatypes,
+*i.e.* `sealed`, `record`, `enum` types.
+A parser can be generated for this grammar, which outputs parse trees
+that are statically-typed in these user-defined datatypes.
+
+## PEG
+
+[Parsing Expression Grammar](https://en.wikipedia.org/wiki/Parsing_expression_grammar)
+(PEG) is similar to Content-Free Grammar (CFG)
+with two extra features: ordered choice and lookahead. 
+It is easier to use PEG to describe language grammars in many applications.
+
+We'll use the [Json Grammar](https://www.json.org) as the main example in this document.
+The official grammar is a CFG; we'll treat it as a PEG that's trivially equivalent. 
+
+A PEG contains *grammar symbols*, such as `value, object, member`.
+Each symbol is associated with a *grammar rule*.
+Rules can take the following forms:
+- ordered choice: `value ← object / array / ...`
+- sequence: `member ← string colon value` 
+- repetition: `digits ← digit*`
+- lookahead: positive `p ← &e`, negative `n ← !e`
+
+
+## Grammar Symbols as Datatypes
+
+In Rekex, every *symbol* in the grammar is represented by a unqiue *datatype* in Java.
+During a parsing process, an input *phrase* that matches a symbol
+will be represented by a *datanode* of the corresponding datatype.
+There is a *root datatype* that represent the *start symbol*;
+at the end of a successful parsing process, a datanode in the root datatype
+is produced to represent the input *sentence*.
+
+For Json, we'll need to define datatypes of `JsonValue, JsonObject, JsonArray, JsonString, ...` etc.
+to represent corresponding grammar symbols.
+If we choose `JsonValue` to be the root datatype, 
+the parser will output a `JsonValue` object for a valid Json input. 
+
+We don't necessarily follow the source grammar verbatim.
+For example, we may introduce a `JsonBool` datatype
+that has no counterpart in the source grammar,
+or we may use a generic datatype like `List<Digit>`
+to represent an in-line rule.
+It's understood that the source grammar is refactored with more symbols introduced
+to maintain the one-to-one correspondence between symbols and datatypes.
+
+All datatypes must be `public`.
+Any Java type can be chosen to represent a symbol, including primitive types.
+
+## Grammar Rules
+
+Every grammar symbol is associated with exactly one grammar *rule*,
+often in relationship to other symbols.
+Correspondingly, every datatype is associated with a grammar rule,
+often in relationship to other datatypes.
+For a quick peek how rules can be represented in Rekex: 
+
+- choice and sequence rules as subtypes and constructors/methods
+- repetition rules as `List<E>` or `E[]`
+- lookaheads as `Peek<E>` and `Not<E>`
+- terminal matching with `@Regex` annotations
+
+
+## Choice Rule as Subtypes
+
+`JsonValue` is a choice of `JsonObject, JsonArray, ...` etc.
+Naturally, this relationship can be represented in a type hierarchy:
 
     sealed interface JsonValue
         permits JsonObject, JsonArray, JsonPrimitive{}
@@ -52,22 +110,19 @@ The root type will be `JsonValue`, which has subtypes `JsonObject`, `JsonArray`,
     sealed interface JsonPrimitive extends JsonValue 
         permits JsonString, JsonNumber, JsonBool, JsonNull{}
 
-For the sake of example, we introduced an intermediary type 
-`JsonPrimitive` not present in the source grammar.
+Notice that we choose to introduce `JsonPrimitive, JsonBool` in our datatypes 
+which aren't in the original grammar.
 
-To Rekex, the parent type `JsonValue` corresponds to an alternation rule, with variant subrules
-each corresponding to a subtype; each subtype will correspond to a grammar rule 
-that is to be derived, and so forth. 
-
-The parent type must be a `sealed` interface or class so that all subtypes are known to Rekex.
+▶ A `sealed` parent type corresponds to a choice rule of its direct subtypes.
 
 ### Order of subtypes
 
-Order of subrules matters; in PEG, the subrules will be attempted in the order they are declared in.
+In PEG, choices are ordered; therefore we need to order the subtypes as well. 
 
-Unfortunately, Java does not define an order on the subtypes in a `permits` clause.
-Rekex will try to establish an implicit order based on the declaration order of subtypes 
-in the source file; this works if they are declared in the same `.java` file,
+Unfortunately, Java's reflection API does not define an order on the subtypes in a `permits` clause.
+Rekex will try to establish an implicit order 
+among subtypes based on their line numbers in the source file; 
+this works if they are declared in the same `.java` file,
 and the file is compiled with debug information enabled 
 (which is the default behavior of `javac`).
 
@@ -81,8 +136,8 @@ this document assumes that datatypes are implicitly `public`.
 
 #### @Permits
 
-If it's not possible to implicitly order the subtypes according to the previous section
-(in which case Rekex will report an error), or if such ordering is deemed unreliable,
+If the implicit order can not be established
+(in which case Rekex will report an error), or if the implicit order is considered unreliable,
 you can use `@Permits` to list the subtypes in an explicit order.
 
     @Permits({JsonObject.class, JsonArray.class, JsonPrimitive.class})
@@ -90,142 +145,30 @@ you can use `@Permits` to list the subtypes in an explicit order.
 
 The parent type is not required be `sealed` if it's annotated with `@Permits`.
 
-> The best practice is probably to define all types in one `.java` file,
-> omit the `permits` clause, list subtypes in `@Permits`.
 
-## Concatenation Rule as Constructor
+## Sequence Rule as Constructor
 
-Consider a member field in a Json object, which has the syntactic form of 
-a Json string, followed by ":", followed by a Json value.
-This can be expressed as a constructor
+The grammar rule `member ← string colon value` can be expressed as 
 
     record Member(JsonString name, Colon colon, JsonValue value){}
 
-Note that this record class has one public constructor, the implicit *canonical constructor*.
-`Colon` is assumed to be a datatype that matches `":"`, which we will talk about later.
+Note that this record class has one public constructor, the implicit canonical constructor.
 
-To Rekex, the datatype `Member` corresponds to a concatenation rule of 3 subrules
-corresponding to the parameter datatypes of the constructor.
-At runtime, the parser will try to match the input against the subrules in sequence;
-if successful, 3 arguments are instantiated which are fed to the constructor 
-to instantiate a `Member` instance.
+▶ A datatype with a single public constructor corresponds to a sequence rule
+of the parameter datatypes.
 
-> The following sections will introduce more ways to represent alternation and concatenation rules;
-> however, `sealed` types and canonical `record` constructors are the recommended way. 
-
-## @Ctor
-
-If there are more than one public constructors, you can annotate one of them with `@Ctor`
-to tell Rekex to use that particular one to derive the grammar rule for the datatype. 
-For example,
-
-    record Member(JsonString name, JsonValue value) 
-    {
-        @Ctor public
-        Member(JsonString name, Colon colon, JsonValue value) {
-            this(name, value);
-        }
-    }
-
-Here, the canonical constructor does not store the colon in the record,
-because the colon is irrelevant in the "semantic" structure.
-A second public constructor is declared with `@Ctor` to express the "syntactic" structure. 
-
-### concatenation rule as factory method
-
-Instead of a constructor, you can declare a public **static method** with `@Ctor`
-for the same purpose. The method return type must be the same as the datatype. 
-
-    record Member(JsonString name, JsonValue value) 
-    {
-        @Ctor public static 
-        Member ctor(JsonString name, Colon colon, JsonValue value) {
-            return new Member(name, value);
-        }
-    }
-
-Such static factory methods are more flexible than constructors in many cases.
-
-### "Ctor"
-
-We'll use the term **ctor** to refer to public constructors or public static methods
-that are annotated with `@Ctor`, or, the sole public constructor of a datatype
-(if the datatype contains no explicit `@Ctor` constructors/methods,
-but does contain a single public constructor).
-
-A ctor with an empty parameter list is allowed, and it corresponds to the ε-production rule,
-matching the empty string.
-
-Note that Java automatically introduces a default constructor in some cases
-
-    class Epsilon{} // it has a default constructor `Epsilon()`
-
-To avoid accidents, Rekex does not recognize it as a ctor,
-even though it's the sole public constructor of the datatype.
-If a zero-arg constructor is 
-*intended* to be a ctor, it must be explicitly annotate with `@Ctor`.
-
-
-### Thinning the parse tree
-
-A ctor's signature reflects the full syntactic structure of a production rule;
-the ctor's body however can return any object of the datatype.
-This enables us to construct a parse tree with only the data we are interested in,
-instead of construct a full syntax tree containing all syntactic nodes.
-
-As an example of aggressive thinning, suppose we want to write a calculator for expressions
-like `2*(3+4)`. We'll declare datatypes like `Term`, `Factor`, etc. corresponding to grammar rules;
-however, each datatype only needs to store the numeric value of the subexpression;
-evaluations are done in ctors' bodies along the way; the parse tree under construction 
-is never more than one level deep.
-
-On the other hand, thinning may not always be a good idea. 
-The first example of `Member` looks so much simpler and nicer than the other two.
-Most often it's not a big deal to produce a bloated parse tree first,
-then immediately transform it to a desired form in a followup step.
-
-## Alternative Ctors
-
-Multiple ctors can be declared in a datatype (as constructors or static methods, or both)
-
-    interface Foo{
-        @Ctor public static Foo fooA(...){...}
-        @Ctor public static Foo fooB(...){...}
-    }
-
-The datatype `Foo` corresponds to an alternation rule of two subrules,
-each is a concatenation rule derived from the ctor.
-In this example we list all syntactic rules for `Foo` in the body of `Foo`, 
-instead of in different subtypes.
-It is also possible to hoist ctors to a central "ctor catalog" class
-which we will discuss later.
-
-A datatype having only one ctor is a special case of this section,
-corresponding to an alternation rule of one subrule. 
-
-### Order of Ctors 
-
-Order of subrules matters.
-Rekex will try to establish an implicit order among the ctors 
-based on their declaration order in the source file.
-This usually works and you don't need to worry about it.
-If it doesn't work, Rekex will report an error, and you'll
-have to specific the order by `@Ctor(1)`, `@Ctor(2)`, etc. 
 
 
 ## Repetition Rule as `List<E>` or `E[]`
 
 A repetition rule `Foo*` matches subrule `Foo` zero or more times sequentially. 
 Naturally, the corresponding Java datatype is `List<Foo>` or `Foo[]`. 
-
-Assuming `JsonChar` is a datatype that matches a logical Json character, 
-which could be a single input char or an escape sequence.
-A Json string contains zero or more logical characters enclosed in quotes.
+For example, a Json string contains zero or more logical characters enclosed in quotes.
 
     record JsonString(Quote qL, List<JsonChar> chars, Quote qR) implements JsonPrimitive{}
 
-> Note - Repetition rules could be encoded as alternation and concatenation rules, e.g. 
-  <br> `Foos = Foo Foos | ε` . <br> 
+> Note - Repetition rules could be encoded as choice and sequence rules, e.g. 
+  `Foos = Foo Foos | ε` . <br> 
   Some grammar authors prefer this approach; and you can do the same in Rekex as well. 
   Nevertheless, Rekex natively supports repetition rules because they are very common in grammars. 
 
@@ -245,8 +188,7 @@ This means a repetition of 0 or more `X`,
 where `X` is a repetition of `Foo` 0 to 3 times.
 
 Array types `E[]` are supported too, gratuitously; `E` can be a primitive type.
-
-Annotations on array types are somewhat strange, 
+Annotations on array types are kind of strange, 
 see [JLS-9.7.4](https://docs.oracle.com/javase/specs/jls/se16/html/jls-9.html#jls-9.7.4).
 For example
 
@@ -263,11 +205,11 @@ The equivalent `List` form is
 ## Lookaheads as `Peek<E>` and `Not<E>`
 
 Positive and negative lookaheads, 
-a.k.a `and-predicate` and `not-predicate` in PEG,
+a.k.a `and-predicate (&e)` and `not-predicate (!e)` in PEG,
 are syntactic predicates that do not consume any input.
 In Rekex they are expressed in datatypes `Peek<E>` and `Not<E>`.
 
-For example, rule `A` is defined as concatenation of `B C`, except in the case of `B C1`. 
+For example, `A` is a sequence of `B C`, except in the case of `B C1`. 
 We need a negative lookahead at the position after `B` to exclude `C1`.
 
     record A(B b, Not<C1> nc1, C c){}
@@ -279,23 +221,20 @@ We need a negative lookahead at the position after `B` to exclude `C1`.
 
 ## Generic Datatypes - `Either<A,B>`, `Opt<E>`, etc.
                           
-Datatypes and ctors can be generic with type parameters;
+Datatypes can be generic with type parameters;
 Rekex will perform necessary type inference and substitutions. 
 For example, you can declare a generic type
 
     record Def<N, V> (N name, Colon colon, V value) {}
 
 when Rekex encounters a datatype `Def<Foo,Bar>`, it will derive the grammar rule 
-as concatenation of `(Foo, Colon, Bar)`.
+as a sequence of `(Foo, Colon, Bar)`.
 
 With this mechanism, Rekex ships with a few generic helper datatypes. 
 They are not native to Rekex core, and you can easily define your own.
 The helper datatypes include
 
 - `Either<A,B>` - matches either A or B, as an ad-hoc sum type. 
-    > We don't always want to, and sometimes we cannot,
-      impose a common supertype for A and B. 
-      `Either<A,B>` is a quick and direct way to express rule `A|B`
 - `Alt2<A,B>` etc. - ad-hoc sum types
 - `Seq2<A,B>` etc. - ad-hoc product types
 - `Opt<E>` - optionally matches E, i.e. `E?`
@@ -313,28 +252,32 @@ which can be expressed as `SepBy<JsonValue,Comma>`
 `JsonObject` is similar with `SepBy<Member,Comma>` .
 
 
-## Tokenizer with @Regex
+## Token Datatypes with @Regex
 
-Finally, at the bottom level of a grammar, we need rules to match input characters (i.e. terminals).
+At the leaf level of a grammar, we need rules to match input characters (i.e. terminal symbols).
 This is known as lexing or tokenization. Rekex does it by datatypes annotated with regular expressions.
 
 ### @Regex on String
 
-A `String` type annotated with `@Regex` matches strings that match the regular expression. 
+A `String` type annotated with `@Regex` matches phrases with the regular expression. 
 For example, to match one or more digits
 
-        record Digits( @Regex("[0-9]+")String str ){}
+        record Fraction( Dot dot, @Regex("[0-9]+")String digits ){}
+                                  ---------------------- 
 
-The regular expression is of the Java dialect, defined in
-[java.util.regex.Pattern](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html) .
-
+The annotated type `@Regex("[0-9]+")String` is a *token datatype*.
+A token datatype corresponds to a (synthetic) grammar symbol for which the rule
+is defined by a regular expression on terminal symbols.
 
 ### Equivalents of @Regex 
+
+`@Regex` can contain any regular expression of the Java dialect, defined in
+[java.util.regex.Pattern](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/regex/Pattern.html) .
 
 Other annotations can be used in place of `@Regex` 
 if they are convertible to `@Regex` through 
 [AnnoMacro](./AnnoMacro.md). You can define your own macros, but most likely you'll only need
-`@Ch` and `@Str` provided by Rekex.
+`@Ch` and `@Str` shipped with Rekex.
 
     @Ch("abc")  // matches "a" or "b" or "c"
 
@@ -359,8 +302,9 @@ For example
     List< @Ch(range={'A','Z'})Integer >
 
 Note that Java regular expression works at the unit of "code point", a 32-bit value.
-If the regex matches the input, it must match exactly 1 code point.
-If the datatype is `char` or `Character`, the code point matched
+For single character datatypes,
+if the regex matches the input, it must match exactly 1 code point;
+if the datatype is `char` or `Character`, the code point matched
 must not exceed `0xFFFF`.
 
 ### @Regex on Void
@@ -374,12 +318,12 @@ for example, the brackets around a Json array
 ### @Regex on Enum values
 
 You can apply @Regex or equivalent on values of an `enum` type; 
-the enum type corresponds to an alternation rule
+the enum type corresponds to a choice rule
 with one subrule for each value, in their declaration order.
 
     enum JsonBool implements JsonPrimitive
     {
-        @Str("true") TRUE,
+        @Str("true" ) TRUE,
         @Str("false") FALSE,
     }
     enum JsonNull implements JsonPrimitive
@@ -413,7 +357,7 @@ annotation with the RegExp API.
 ### Whitespace handling
 
 The Json grammar, like most grammars, allows whitespaces between most tokens.
-The best way to handle them is to consume trailing whitespaces after such token.
+The best way to handle them is to consume trailing whitespaces after such tokens.
 
 Here's how it's achieved in Rekex.
 An `@Regex` can specific a `group` attribute, for example
@@ -448,7 +392,7 @@ use `@Word` instead of `@Ch` or `@Str`.
 
     enum JsonBool implements JsonPrimitive
     {
-        @Word("true") TRUE,
+        @Word("true" ) TRUE,
         @Word("false") FALSE,
     }
 
@@ -458,9 +402,9 @@ use `@Word` instead of `@Ch` or `@Str`.
 
     @Word({"+", "-"}) char op
 
-Be careful not to apply `@Word` on tokens that may be followed by whitespaces
-that cannot be skipped,
-for example, the starting quote of Json string. 
+Be careful not to apply `@Word` on tokens that may be followed by 
+significant whitespaces that cannot be ignored,
+for example, the starting quote of Json strings. 
 
 We'll also need to match optional whitespaces in some other places,
 notably leading whitespaces in inputs, which `@Word` doesn't address.
@@ -473,62 +417,29 @@ Define a datatype for optional whitespaces and insert it wherever it's allowed.
     record JsonInput(OptWs leadingWs, JsonValue value){}
 
 
-## Semantic Predicate
+## ParseInfo
 
-Some times it is difficult or impossible to express a rule in a syntactic way,
-when we have to resort to Java code to validate the input.
-For example, let's say we need a rule to match *prime numbers*.
-Syntactically, the best we can do is to match zero-or-more digits;
-whether or not it is actually a prime number can only be tested in Java code,
-by a *semantic predicate*.
+`ParseInfo` can be inserted anywhere in a sequence rule,
+with no effect on rule matching. 
+It contains information about input regions that matched the rule and subrules.
 
-A ctor can indicate that it contains semantic predicates by declaring 
-possible failure types as exception types in the `throws` clause.
-If an exception of one of those types is thrown when invoking the ctor,
-we say that the ctor fails a semantic predicate.
-
-
-        @Ctor public static 
-        CoolNumber prime(@Regex("[0-9]+")String str) throws SomeException
+        record FooBar(Foo foo, Bar bar, ParseInfo info)
         {
-            int num = Integer.parseInt(str);
-            if(!isPrime(num))
-                throw new SomeException("not a prime: " +str);
-            return new CoolNumber(num);
+            void test()
+            {
+                println(info.text()); // FooBar
+                println(info.of(foo).text());  // Foo
+    
+                assert info.start() == info.of(foo).start();
+                assert info.end() == info.of(bar).end();
+            }
         }
-
-If a ctor fails a semantic predicate, 
-the corresponding rule fails to match the input.
-However, this is not a fatal error; 
-the parser does not stop immediately; instead,
-alternative rules will be explored if there's any.
-For example, 
-if `prime()` fails the semantic predicate,
-the next ctor for `CoolNumber`  (if there is one) 
-will be tried which may successfully match the input.
-
-A semantic predicate can be considered a *lookbehind* rule
-that tests the arguments to a ctor after they have matched the input.
-                            
-All failure types must be explicitly listed 
-in the `throws` clause, including unchecked exception like`IllegalArgumentException`. 
-
-If a ctor throws an `Exception` that's not declared in the `throws` clause,
-it is "unexpected", and the parser stops immediately
-with a `Fatal` result, with the exception as the cause.
-In the example above, `parseInt(str)` could throw `NumberFormatException`
-for a very long `str`; since the exception type is not declared,
-it would cause a `Fatal` error.
-
-
-If a ctor throws an `Error`, it will not be caught or handled by the parser.
-
 
 
 
 ## PegParser
 
-Once the datatypes are defined, we can create a 
+Once all datatypes are defined, we can create a 
 [PegParser](../rekex-parser/src/main/java/org/rekex/parser/PegParser.java)
 for the *root type*
 
@@ -623,62 +534,319 @@ Positions in the input can be translated into line and column numbers by `LineCo
         var lc = new LineCounter(input);
         System.out.printf("line=%d, col=%d", lc.line(position), lc.column(position));
 
+
+
+
+# PART II -- AST Construction
+
+In *PART I*, we define algebraic datatypes to faithfully mirror the structure of the grammar.
+The parser outputs *parse trees*, a.k.a. *concrete syntax trees*,
+that retain all syntactic structure and information from inputs.
+
+Usually, a parser application needs to produce some other kinds of results from inputs. 
+We'll refer to the desired results as *abstract syntax trees* (ASTs),
+in any sense of abstractness. 
+For example, a calculator application may only need to produce a numeric value
+for a math expression; the numeric value is the AST. 
+
+If we have a parser that outputs parse trees, we can transform parse trees to any ASTs
+in separate stages after the parsing process. 
+This is a clean and versatile approach -- 
+the grammar is transliterated into algebraic datatypes;
+the parser produces parse trees from inputs;
+then transformers produce ASTs from parse trees.
+
+However, a programmer may have good reasons to expect a specific kind of AST
+directly out of the parser. Maybe that's the only requirement of the application.
+Maybe that's for removing useless syntactic information from datanodes.
+In any case, we need to integrate AST productions in the parsing process.
+
+## Ctor
+       
+Previously, we used the canonical constructor of a record class
+to express the sequence rule for the datatype.
+
+    record Member(JsonString name, Colon colon, JsonValue value){}
+
+The canonical constructor actually servers 3 purposes at the same time:
+- the list of parameter types defines fields in the datatype
+- the list of parameter types defines the grammar rule for the datatype
+- the body instantiates a datanode,
+  by simply storing the parameters in the fields
+
+If we want to design the datanode to store information differently,
+for example, to store only `(name,value)` but not `colon`
+
+    record Member(JsonString name, JsonValue value){ ... }
+
+we need to provide an explicit **ctor** for the datatype,
+which is a constructor/method where
+- the return type is the datatype
+- the list of parameter types defines the grammar rule for the datatype
+- the body returns a datanode of the datatype
+
+An explicit ctor can be either a public constructor marked by `@Ctor`
+
+
+    record Member(JsonString name, JsonValue value) 
+    {
+        @Ctor public 
+        Member(JsonString name, Colon colon, JsonValue value) {
+            this(name, value);
+        }
+    }
+
+or a public `static` member method marked by `@Ctor`
+
+    record Member(JsonString name, JsonValue value) 
+    {
+        @Ctor public static 
+        Member ctor(JsonString name, Colon colon, JsonValue value) {
+            return new Member(name, value);
+        }
+    }
+
+The second approach is recommended because factory methods are more flexible 
+than constructors.
+
+To give another example, `JsonNull` could be designed as
+
+    interface JsonNull extends JsonPrimitive
+    {
+        JsonNull singleton = ...;
+        
+        @Ctor public static 
+        JsonBool ctor( @Str("null")Void arg ){ return singleton; }
+    }
+
+▶ A ctor for a datatype defines a sequence rule of the parameter datatypes.
+
+A ctor with an empty parameter list defines an ε-production rule,
+matching the empty string.
+
+## Multiple Ctors
+
+Multiple ctors can be declared for a datatype.
+For example, we may choose to design `JsonBool` as
+
+    interface JsonBool extends JsonPrimitive
+    {
+        boolean value();
+        
+        @Ctor public static 
+        JsonBool trueV( @Str("true")Void arg ){ return ... }
+
+        @Ctor public static 
+        JsonBool falseV( @Str("false")Void arg ){ return ... }
+    }
+
+Here, `JsonBool` has two ctors, with different parameter types
+to represent two different rules.
+
+> All ctors for a datatype must have a return type
+> that's exactly the same as the datatype.
+
+▶ A datatype with *N* ctors corresponds to a choice rule
+  of *N* subrules, each subrule defined by a ctor.
+
+
+### Order of Ctors
+
+Order of subrules matters.
+Rekex will try to establish an implicit order among the ctors
+based on their declaration order in the source file.
+This usually works and you don't need to worry about it.
+If it doesn't work, Rekex will report an error, and you'll
+have to specific the order by `@Ctor(1)`, `@Ctor(2)`, etc.
+
+
 ## Ctor Catalog
 
-In previous examples, ctors of a datatype are declared in the body of the datatype.
-In some cases, we don't want to, or cannot, add those methods there. 
-Instead, we can declare ctors in a central class, the "ctor catalog" class.
-Another reason to do this is to place all syntax rules in one place,
-so that it's easier to review the grammar.
+Sometimes we don't want to, or can't, define ctors for a datatype
+within the class body of the datatype. 
+Maybe we want to keep the datatype declaration clean,
+free of syntactic rules.
+Maybe the datatype is from 3rd party that we cannot modify.
+Maybe the datatype doesn't even have a class body -- 
+primitive datatypes can be chosen to represent grammar symbols.
 
-    public class CtorCatalog 
+Ctors for a datatype can be declared in a central *ctor catalog* instead
+
+    public class JsonCtors 
     {
-        public Foo fooA(...){...}
-        public Foo fooB(...){...}
+        public Member member(JsonString name, Colon colon, JsonValue value)
+        {
+            return new Member(name, value);
+        }
 
-        public Bar bar(List<Foo> foos){...}
+        public JsonBool trueV(...){...}
+        public JsonBool falseV(...){...}
+
         ...
     }
-    
-    PegParser<Bar> parser = PegParser.of(Bar.class, CtorCatalog.class, new CtorCatalog());  
-    // or
-    PegParser<Bar> parser = new PegParserBuilder()
-        .rootType(Bar.class)
-        .catalogClass(CtorCatalog.class)
-        .build(new CtorCatalog());
 
-*All `public` methods declared in the catalog class are considered ctors.* 
+*All `public` methods declared in the catalog class are considered ctors.*
 Do not declare public methods that are not intended as ctors.
 `@Ctor` and `static` are allowed on ctors, but not required.
 
-An instance of the catalog must be provided to the parser constructor.
-The instance may be invoked concurrently and should be immutable;
-it may contain constant data accessible to the ctors.
-You may create multiple parsers each with a different catalog instance
-that influence ctors differently, for example, to test semantic predicates
-against some config info.
+If a ctor catalog is used to define some ctors,
+the catalog class must be provided to the parser builder,
+an instance of the catalog must be provided to the constructor of the parser.
 
-To find the ctors for a datatype, Rekex first searches the catalog for ctors
-that return the datatype.
-If not found, Rekex searches the class body of the datatype.
-If not found there either, Rekex searches subtypes of the datatype.
-Without subtypes, the canonical constructor of the datatype is the ctor. 
+    PegParser<JsonValue> parser = new PegParserBuilder()
+        .rootType(JsonValue.class)
+        .catalogClass(JsonCtors.class)
+        .build(new JsonCtors());
+
+    // or
+    PegParser<JsonValue> parser = PegParser.of(JsonValue.class, JsonCtors.class, new JsonCtors());  
 
 
-## ParseInfo
+The catalog instance may be accessed concurrently and should be immutable;
+it may contain constant data accessible to its ctors.
+You may instantiate multiple parsers each with a different catalog instance
+that influence ctors differently.
 
-`ParseInfo` can be inserted anywhere in a ctor signature; 
-it contains input regions that matched the rule and its direct subrules. 
 
-        public FooBar ctor(Foo foo, Bar bar, ParseInfo info)
+## Ctors as pure functions
+
+Ctors should not cause side effects, nor should they depend on side effects.
+The body of a ctor should depend only on its arguments,
+and possible some constant data that remain the same throughout the parsing process.
+
+
+## Datatype to Rule
+
+Given any datatype, Rekex derives a grammar rule for it.
+This often involves other datatypes. 
+Given the root datatype, Rekex recursively derives 
+all datatypes and rules for the entire grammar.
+
+Since there are multiple ways the rule for a datatype
+can be expressed, Rekex uses the following procedure
+to derive the rule unambiguously:
+
+1. If the ctor catalog contains one or more ctors for the datatype, 
+  the rule is derived from these ctors.
+
+2. If the class/interface of the datatype contains one or more ctors, 
+the rule is derived from these ctors.
+
+3. If the datatype is a `sealed` type, the rule is derived from its subtypes.
+
+4. If the datatype contains a single public constructor,
+  the constructor is the implicit ctor for the datatype.
+
+Note that (3) can be interpreted as a list of implicitly ctors as well; 
+if written explicitly:
+
+        public JsonValue object(JsonObject obj){ return obj; }
+        public JsonValue array(JsonArray arr){ return arr; }
+        ...
+
+Therefore, to derive the rule for a datatype is to find
+the ctors for the datatype, and the ctors are found either
+in the catalog, or within the datatype, 
+or from subtypes, or from the single constructor.  
+
+The [Specification](./Spec.md) defines this procedure more rigorously. 
+
+## Refactor from concrete to abstract
+
+It's probably a good idea to design a parser by starting
+with simple algebraic datatypes that directly mirror the grammar.
+Then we can incrementally refactor individual datatypes.
+For example, we start with `record Member(JsonString,Colon,JsonValue){}`.
+Now we want to discard `Colon` from the datatype.
+We first add an explicit ctor to replace the implicit ctor
+
+    public Member member(JsonString name, Colon colon, JsonValue value)
+    {
+        return new Member(name, colon, value);
+    }
+
+which is trivial and doesn't do anything useful.
+But then we can safely refactor `Member` without breaking the grammar.
+We can do this progressively until all datatypes,
+particularly the root datatype, 
+contain only the information we need from ASTs.
+
+
+## Semantic Predicate
+
+Some times it is difficult or impossible to express a parsing 
+rule syntactically in grammar rules,
+and we have to resort to Java code inside ctors to check the rule.
+
+Imagine we are designing a calculator that supports functions and
+variables. A phrase in the form of `a(b)` means a function call,
+if `a` is a known function name. Unfortunately, if `a` is not a function
+name but a variable name, we are required to interpret 
+`a(b)` as implicit multiplication `a*(b)`.
+This ambiguity cannot be resolved syntactically, 
+if function names and variables names are not fixed.
+Nor can we match `a(b)` with a more abstract construct
+and delay the interpretation post parsing,
+because `a(b)^c` could represent two different tree structures,
+`(a(b))^c` vs `a*((b)^c)`, depending on the meaning of `a`.
+
+We can solve the problem with a *semantic predicate*
+on the ctor that matches function calls
+                                   
+    record CtorCatalog(Set<String> funcNames) // with config data
+    {
+        // name '(' arg ')'
+        public FuncCall fc(Name name, PL pl, Expr arg, PR pr) throws NotFuncException
         {
-            System.out.println(info.text()); // FooBar
-            System.out.println(info.of(foo).text());  // Foo
+            if(!funcNames.contains(name.text()))
+                throw new NotFuncException(); // semantic predicate failure
+            return new FuncCall(name, arg);
+        }
 
-            assert info.start() == info.of(foo).start();
-            assert info.end() == info.of(bar).end();
+When a phrase `a(b)` matches this rule 
+(which is ordered before implicit multiplication in grammar definition),
+the ctor is invoked; if the ctor throws an `Exception` that's explicitly
+listed in the `throws` clause, the ctor fails a semantic predicate, 
+the rule is vetoed. It doesn't stop the parser immediately;
+the parser will go on attempting to match alternative rules.
+A semantic predicate can be considered a *lookbehind* rule
+that tests the arguments to a ctor after they have matched the input.
+
+▶ A ctor contains semantic predicates if it has an explicit 
+  `throws` clause. A ctor fails a semantic predicate if it
+  throws an `Exception` that's declared in the `throws` clause.
+
+Note that Rekex does not (officially) support *context-sensitive*
+semantic predicates which depend on preceding phrases,
+because that would require ctors with side effects.
+
+If a ctor throws an `Exception` that's not explicitly declared,
+it is considered a fatal failure, and the parser stops immediately.
+For example, if there's no alternative interpretation for `a(b)`,
+and `a` must be a function name, the ctor can be written as 
+
+        public FuncCall fc(Identifier name, PL pl, Expr arg, PR pr)
+        {
+            if(!funcNames.contains(name.text()))
+                throw new IllegalArgumentException(); // fatal failure
+
+If a ctor throws an `Error`, the `Error` will not be caught or handled by the parser.
+
+
+## Conclusion
+
+In Rekex, grammar symbols are represented by user-defined datatypes;
+grammar production rules are represented by ctor signatures;
+input phrases are mapped to datanodes by invoking ctors. 
+Grammar definition and AST construction are unified 
+naturally as ordinary Java types and methods.
+There are no scaffolding code; parsers are written in the minimum 
+amount of code possible, and everything is nicely and statically typed.
+
 
 ## References
+
+- [Examples](../rekex-example/src/main/java/org/rekex/exmple/parser)
 
 - [Specification](./Spec.md)
 

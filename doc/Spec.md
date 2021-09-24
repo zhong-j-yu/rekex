@@ -1,11 +1,30 @@
 # Rekex Specification 
 
-This document specifies how Rekex maps datatypes to grammar rules.
+Rekex maps every datatype to a grammar rule;
+this document defines how the mapping is derived.
 
-## Annotated-Types
+## Grammar Rules
 
-In this document, datatypes are annotated-types of Java 17.
-Annotations mentioned are all type-annotations unless specified otherwise.
+Following grammar rules are supported:
+
+- *Alternation Rule*, with one or more subrules, ordered.
+- *Concatenation Rule*, with zero or more subrules, ordered.
+- *Repetition Rule*, with one subrule, and `min/max` cardinality.
+- *Lookahead/Lookbehind Rule*, with one subrule.
+- *Regex Rule*, with a `regex`, a `flags`, a `group` number.
+
+Each rule is also associated with
+- a `datatype` of the value to be produced if the rule applies.
+- an `instantiator` that produces a value if the rule applies.
+
+The exact meaning of grammar rules are interpreted by the consumer of the rules.
+The PEG parser generator interprets them according to PEG semantics.
+
+
+## Datatypes, Annotated-Types 
+
+In Rekex, datatypes are annotated-types of Java 17.
+Annotations involved are all type-annotations unless specified otherwise.
 Annotations on a type is a *set*, with no ordering. 
 Types without annotations are also considered annotated-types 
 with an empty set of annotations. 
@@ -21,7 +40,7 @@ Raw types and wildcards are not supported.
 
 ### Equality
 
-Two annotated types are equal if they have the same syntactic form.
+Two annotated types are equal if they have the same form.
 (Equality is not defined by mutual subtyping relationship.) 
 
 ### Subtyping
@@ -44,36 +63,20 @@ For example, `@A1()LinkedList<@A2()String>` is a subtype of
 `List<@A2()String>`.
   
 
-## Grammar Rules
 
-The following grammar rules may be derived by Rekex
-- *Alternation Rule*, with zero or more subrules, ordered.
-- *Concatenation Rule*, with zero or more subrules, ordered.
-- *Repetition Rule*, with one subrule, and `min/max` cardinality.
-- *Lookahead/Lookbehind Rule*, with one subrule.
-- *Regex Rule*, with a `regex`, a `flags`, a `group` number.
-
-Each rule is also associated with
-- a unique`id`, which can be thought of as the terminal symbol.
-- a `datatype` of the value to be produced if the rule applies.
-- an `instantiator` that produces a value if the rule applies. 
-
-The exact meaning of grammar rules are interpreted by the consumer of the rules;
-a PEG parser generator will interpret them according to PEG semantics.
-
-## Derive Grammar Rules from Datatypes
+## Datatypes to Grammar Rules
 
 Given a target datatype, its corresponding grammar rule is derived
 from following clauses, whichever succeeds first
 
-1. If there are one or more ctors in the catalog for the target datatype,
-   invoke subprocedure *derive_from_ctor_list* with these ctors.
-   For each `public ` method declared in the "ctor catalog" class,
+1. For each `public ` method declared in the "ctor catalog" class,
    with 0 or more type parameters `{Ti}`, if there exists a unique
    substitution `{Ti:=Ai}` such that the method return type, with the substitution applied,
-   is equal to the target datatype, the method is a "ctor" for the datatype. 
-  
-2. If the target datatype is a `int, char, Integer, Character, String, Void` type,
+   is equal to the target datatype, the method is a "ctor" for the datatype.
+   If there are one or more ctors in the catalog for the target datatype,
+   invoke subprocedure *derive_from_ctor_list* with these ctors.
+
+2. If the target datatype is of `int, char, Integer, Character, String, Void` types,
    and its annotations contains exactly one annotation that's convertible to 
    an `@org.rekex.spec.Regex` through AnnoMacro, return a *Regex Rule*,
    with `regex, flags, group` from the `@Regex` annotation.
@@ -118,8 +121,8 @@ For example, an `enum` type may match (1), (5), (6), in which case (1) takes pre
 - (7) may conflict with (8)-(9)
 - (8) may conflict with (9)
 
-Note that any type can be used as the target type in (1), e.g. `Map<String,Object>`,
-even special types like `int`, `String`, `List<Object>`.
+Note that any Java type can be used as the target type in (1), e.g. `Map<String,Object>`,
+even types like `int`, `String`, `List<Object>`.
 This of course can be confusing and dangerous.
 
 Summary: to map a datatype to a grammar rule
@@ -162,13 +165,13 @@ Summary: to map a datatype to a grammar rule
 
 ## References
 
-- https://docs.oracle.com/javase/specs/jls/se16/html/jls-9.html#jls-9.7.4
-
-- https://docs.oracle.com/javase/specs/jls/se16/html/jls-4.html#jls-4.10
-
 - [AnnoMacro](./AnnoMacro.md)
 
 - [@Regex and equivalent](./RegexAnno.md)  
+
+- https://docs.oracle.com/javase/specs/jls/se16/html/jls-9.html#jls-9.7.4
+
+- https://docs.oracle.com/javase/specs/jls/se16/html/jls-4.html#jls-4.10
 
 ----
 *Create by [Zhong Yu](http://zhong-j-yu.github.io).

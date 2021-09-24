@@ -37,4 +37,6 @@ E1 does not contain generic E as children.
 That's not bad; we don't need OOP to eval the children;
 the types of the children are precisely known.
 
+In general, E1 and E2 may not have a type relationship.
+
 The structure is flat. Associativity is not interpreted by the parser.

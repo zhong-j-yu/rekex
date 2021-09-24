@@ -39,7 +39,7 @@ See more examples [here](../rekex-example/src/main/java/org/rekex/exmple/regexp)
 (including the infamous regex for email address).
 
 RegExp fully conforms to 
-[java.util.regex.Pattern](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html),
+[java.util.regex.Pattern](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/regex/Pattern.html),
 supporting all of its features.
 
 RegExp is part of [Rekex](../README.md), 
@@ -195,7 +195,7 @@ To be *reluctant* or *possessive*
 
 A subexpression can be enclosed in a *capturing group*,
 so that it can be referenced later, by 
-[Matcher](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Matcher.html), 
+[Matcher](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/regex/Matcher.html), 
 or by back-references.
 
 - **unnamed group** can be referenced by its group number
@@ -228,7 +228,7 @@ Or, if you can, stick to named groups and named references.
 
 A regex atomic group prevents backtracking.
 In the javadoc of
-[Pattern](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html),
+[Pattern](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/regex/Pattern.html),
 it's referred to as `an independent, non-capturing group`
 
         var digits_all = atomicGroup(rep0(digit));
@@ -253,13 +253,13 @@ Use `boundary_xxx()` methods for predefined boundary matchers
 
 ## flags
 To turn on/off the 
-[flags](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html#flags()), 
+[flags](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/regex/Pattern.html#flags()), 
 use `flag(boolean, flags, exp)`
 
         var abc_ci = flag(true, Pattern.CASE_INSENSITIVE, abc);
  
 For the flag 
-[CASE_INSENSITIVE](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html#CASE_INSENSITIVE) 
+[CASE_INSENSITIVE](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/regex/Pattern.html#CASE_INSENSITIVE) 
 there is a convenience method `ignoreCase(exp)`
 
         var abc_ci2 = ignoreCase(abc);
@@ -396,7 +396,7 @@ from datatypes of the parse tree.
 
 - [RegExp.java](../rekex-regexp/src/main/java/org/rekex/regexp/RegExp.java)
 
-- [java.util.regex.Pattern](https://docs.oracle.com/en/java/javase/16/docs/api/java.base/java/util/regex/Pattern.html)
+- [java.util.regex.Pattern](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/regex/Pattern.html)
 
 ## P.S.
 

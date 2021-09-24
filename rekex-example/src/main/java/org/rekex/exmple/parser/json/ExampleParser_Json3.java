@@ -93,8 +93,7 @@ public interface ExampleParser_Json3
             return map;
         }
 
-        // intermediary construct
-        public record Member(String name, @Word(":") char COLON, Object value){}
+        public record Member(String name, @Word(":")Void COLON, Object value){}
 
         public List<Object> array(@Word("[")Void PL, SepBy<Object, Comma> values, @Word("]")Void PR)
         {

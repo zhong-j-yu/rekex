@@ -53,7 +53,7 @@ public interface ExampleParser_Calculator1
     {
         @Word({"/","÷"}) div,
         @Word({"*","×"}) mul,
-        @Word("") mul_implicit; // fac1 fac2 == fac1 * fac2
+        @Word("") mul_implicit; // a b == a * b
 
         public int eval(int x, int y){
             return this==div ? x/y : x*y;

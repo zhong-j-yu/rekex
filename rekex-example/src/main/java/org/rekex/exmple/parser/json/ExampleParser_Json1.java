@@ -50,7 +50,7 @@ public interface ExampleParser_Json1
 
     // composite datatypes --------------------------------------------
 
-    sealed interface JsonValue{} // permits clause is omitted
+    sealed interface JsonValue{} // the `permits` clause is omitted
 
     record JsonObject(
         @Word("{")Void PL,
@@ -129,7 +129,7 @@ public interface ExampleParser_Json1
         @Regex("[0-9]")char d){}
 
     record Digits(
-        @Regex("[0-9]")char@AtLeast(1)[] ds){}
+        @Regex("[0-9]")char @AtLeast(1)[] ds){}
 
     record DigitsNZ( // a non-zero digit, followed by one or more digits
         @Regex("[1-9]")char d1, Digits more){}
@@ -157,7 +157,7 @@ public interface ExampleParser_Json1
     }
 
 
-    // convert Json string and number to Java String and BigDecimal -------------------------
+    // convert JsonString and JsonNumber to Java String and BigDecimal -------------------------
 
     static String toJavaString(JsonString jStr)
     {
