@@ -76,62 +76,60 @@ from following clauses, whichever succeeds first
    If there are one or more ctors in the catalog for the target datatype,
    invoke subprocedure *derive_from_ctor_list* with these ctors.
 
-2. If the target datatype is of `int, char, Integer, Character, String, Void` types,
-   and its annotations contains exactly one annotation that's convertible to 
-   an `@org.rekex.spec.Regex` through AnnoMacro, return a *Regex Rule*,
-   with `regex, flags, group` from the `@Regex` annotation.
-  
-3. If the target datatype is a `java.util.List<E>` or `E[]`,
-   return a *Repetition Rule*, with the subrule derived from `E`,
-   with `min/max` derived from intersections of all `@org.rekex.spec.SizeLimit`
-   annotations converted from annotations on the target type through AnnoMacro.
-
-4. If the target datatype is `org.rekex.spec.Peek<E>` or `org.rekex.spec.Not<E>`,
-   return a *Lookahead/Lookbehind Rule*, with the subrule derived from `E`.
-  
-   > Following clauses require that the target datatype is a class or interface type,
-   > which is referred to simply as *the class*.
-
-5. If the body of the class declares one or more "ctors",
+2. If the class/interface body of the datatype declares one or more "ctors",
    each ctor being either a public constructor, or a public static method,
    that is annotated with `@org.rekex.spec.Ctor`,
    invoke subprocedure *derive_from_ctor_list* with these ctors.
 
-6. If the class is an `enum` type, it must contain one or more constant fields;
+3. If the datatype is an `enum` type, it must contain one or more constant fields;
    each field must contain exactly one annotation that's convertible to
    an `@org.rekex.spec.Regex` through AnnoMacro.
    The grammar rule for the `enum` type is an *Alternation Rule*, with
    each subrule as a `Regex Rule` referencing a constant field and its `@Regex` annotation.
   
-7. If the class is annotated with `@org.rekex.spec.Permits`,
+4. If the datatype class/interface is annotated with `@org.rekex.spec.Permits`,
    invoke subprocedure *derive_from_subclass_list*,
    with classes listed in the `@Permits` annotation.
   
-8. If the class is a `sealed` type,
+5. If the datatype is a `sealed` type,
    invoke subprocedure *derive_from_subclass_list*, with classes in the `permits` clause.
   
-9. If the class contains exactly one public constructor, 
+6. If the datatype contains exactly one public constructor, 
    and it contains at least one constructor parameter,
    invoke subprocedure *derive_from_ctor_list* with the constructor as the only ctor.
 
+7. If the target datatype is of `int, char, Integer, Character, String, Void` types,
+   and its annotations contains exactly one annotation that's convertible to
+   an `@org.rekex.spec.Regex` through AnnoMacro, return a *Regex Rule*,
+   with `regex, flags, group` from the `@Regex` annotation.
+
+8. If the target datatype is a `java.util.List<E>` or `E[]`,
+   return a *Repetition Rule*, with the subrule derived from `E`,
+   with `min/max` derived from intersections of all `@org.rekex.spec.SizeLimit`
+   annotations converted from annotations on the target type through AnnoMacro.
+
+9. If the target datatype is `org.rekex.spec.Peek<E>` or `org.rekex.spec.Not<E>`,
+   return a *Lookahead/Lookbehind Rule*, with the subrule derived from `E`.
+
+
+
 A datatype may match more than one clauses, therefore clauses are order to resolve the conflict.
-For example, an `enum` type may match (1), (5), (6), in which case (1) takes precedence.
-- (1) may conflict with (2)-(9)  
-- (5) may conflict with (6)-(9)
-- (7) may conflict with (8)-(9)
-- (8) may conflict with (9)
+For example, an `enum` type may match (1), (2), (3), in which case (1) takes precedence.
+- (1) may conflict with all others  
+- (2) may conflict with (3)-(6)
+- (4) may conflict with (5)-(6)
+- (5) may conflict with (6)
 
 Note that any Java type can be used as the target type in (1), e.g. `Map<String,Object>`,
 even types like `int`, `String`, `List<Object>`.
 This of course can be confusing and dangerous.
 
-Summary: to map a datatype to a grammar rule
-- find ctors in the catalog (1)
-- find ctors in the class body (5)
-- infer ctors from subtypes (7, 8)
-- infer ctor from canonical constructor (9)
-- special datatypes are handled by (3) and (4)
-- token datatypes are handled by (2) and (6)
+In summary, given a datatype, Rekex tries to
+
+- find explicit ctors in the catalog (1)
+- find explicit ctors in the class body (2)
+- derive implicit ctors by (3-6)   
+- token and special datatypes are handled by (7-9)
   
 ### subprocedures
 

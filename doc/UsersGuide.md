@@ -30,7 +30,7 @@ A quick example for a parser that matches strings of 0s and 1s:
 
         PegParser<Binary> parser = PegParser.of(Binary.class);
         Binary result = parser.matchFull("0101");
-        print(result.bits().get(3));
+        System.out.println(result.bits().get(3));
 
 
 
@@ -193,13 +193,15 @@ see [JLS-9.7.4](https://docs.oracle.com/javase/specs/jls/se16/html/jls-9.html#jl
 For example
 
         @Ch("abc")char @Size(4)[]
+        -------------- ++++++++++
 
 `@Size(4)` applies to the array type, limiting the size of the array;
 while `@Ch("abc")`, explained later, applies to the component type `char`, 
-constraining an individual element in the array. 
+constraining individual elements in the array. 
 The equivalent `List` form is
 
         @Size(4)List< @Ch("abc")Character >
+        ++++++++++++  -------------------
 
 
 ## Lookaheads as `Peek<E>` and `Not<E>`
@@ -217,18 +219,20 @@ We need a negative lookahead at the position after `B` to exclude `C1`.
 > `Not<C1>` may confuse a casual observer though, 
   as if `nc1` could be one of the many values outside type `C1`.
   You may instead use the equivalent form `Peek<Not<C1>>` 
-  which expresses more verbally that it is a negative lookahead. 
+  which expresses more verbally that it is a negative lookahead.
+
 
 ## Generic Datatypes - `Either<A,B>`, `Opt<E>`, etc.
                           
 Datatypes can be generic with type parameters;
 Rekex will perform necessary type inference and substitutions. 
 For example, you can declare a generic type
+                                            
+    // X but not Y
+    record ButNot<X,Y> (Not<Y> notY, X x){}  
 
-    record Def<N, V> (N name, Colon colon, V value) {}
-
-when Rekex encounters a datatype `Def<Foo,Bar>`, it will derive the grammar rule 
-as a sequence of `(Foo, Colon, Bar)`.
+then, when Rekex encounters a datatype `ButNot<Foo,Bar>`, it will derive the grammar rule 
+as a sequence of `(Not<Bar>, Foo)`.
 
 With this mechanism, Rekex ships with a few generic helper datatypes. 
 They are not native to Rekex core, and you can easily define your own.
@@ -262,7 +266,7 @@ This is known as lexing or tokenization. Rekex does it by datatypes annotated wi
 A `String` type annotated with `@Regex` matches phrases with the regular expression. 
 For example, to match one or more digits
 
-        record Fraction( Dot dot, @Regex("[0-9]+")String digits ){}
+        record Fraction(Dot dot, @Regex("[0-9]+")String digits){}
                                   ---------------------- 
 
 The annotated type `@Regex("[0-9]+")String` is a *token datatype*.
@@ -301,6 +305,8 @@ For example
 
     List< @Ch(range={'A','Z'})Integer >
 
+    record AnyUnicode( @Ch(range={0,0x10FFFF}) int codepoint ){}
+
 Note that Java regular expression works at the unit of "code point", a 32-bit value.
 For single character datatypes,
 if the regex matches the input, it must match exactly 1 code point;
@@ -332,6 +338,8 @@ with one subrule for each value, in their declaration order.
     }
 
 Don't hesitate to define singleton enums with only one value; they are quite common.
+                                    
+    enum EOF{ @Regex("\\z") I }
 
     enum Comma{ @Ch(",")I }
 
@@ -611,12 +619,12 @@ than constructors.
 
 To give another example, `JsonNull` could be designed as
 
-    interface JsonNull extends JsonPrimitive
+    final class JsonNull implements JsonPrimitive
     {
-        JsonNull singleton = ...;
-        
-        @Ctor public static 
-        JsonBool ctor( @Str("null")Void arg ){ return singleton; }
+        static final JsonNull singleton = new JsonNull();
+
+        @Ctor public static
+        JsonNull ctor( @Str("null")Void arg ){ return singleton; }
     }
 
 ▶ A ctor for a datatype defines a sequence rule of the parameter datatypes.
@@ -629,7 +637,7 @@ matching the empty string.
 Multiple ctors can be declared for a datatype.
 For example, we may choose to design `JsonBool` as
 
-    interface JsonBool extends JsonPrimitive
+    non-sealed interface JsonBool extends JsonPrimitive
     {
         boolean value();
         
@@ -643,12 +651,13 @@ For example, we may choose to design `JsonBool` as
 Here, `JsonBool` has two ctors, with different parameter types
 to represent two different rules.
 
-> All ctors for a datatype must have a return type
-> that's exactly the same as the datatype.
+Return types of ctors must be identical to the datatype,
+that is, no subtypes as return types.
 
 ▶ A datatype with *N* ctors corresponds to a choice rule
   of *N* subrules, each subrule defined by a ctor.
 
+This can be thought of as a grammar symbol has one or more production rules. 
 
 ### Order of Ctors
 
@@ -667,12 +676,12 @@ within the class body of the datatype.
 Maybe we want to keep the datatype declaration clean,
 free of syntactic rules.
 Maybe the datatype is from 3rd party that we cannot modify.
-Maybe the datatype doesn't even have a class body -- 
-primitive datatypes can be chosen to represent grammar symbols.
+Maybe the datatype doesn't even have a class body,
+such as primitive types and array types.
 
 Ctors for a datatype can be declared in a central *ctor catalog* instead
 
-    public class JsonCtors 
+    public class CtorCatalog 
     {
         public Member member(JsonString name, Colon colon, JsonValue value)
         {
@@ -685,7 +694,7 @@ Ctors for a datatype can be declared in a central *ctor catalog* instead
         ...
     }
 
-*All `public` methods declared in the catalog class are considered ctors.*
+*All `public` methods declared in the catalog class are explicit ctors.*
 Do not declare public methods that are not intended as ctors.
 `@Ctor` and `static` are allowed on ctors, but not required.
 
@@ -695,11 +704,11 @@ an instance of the catalog must be provided to the constructor of the parser.
 
     PegParser<JsonValue> parser = new PegParserBuilder()
         .rootType(JsonValue.class)
-        .catalogClass(JsonCtors.class)
-        .build(new JsonCtors());
+        .catalogClass(CtorCatalog.class)
+        .build(new CtorCatalog());
 
     // or
-    PegParser<JsonValue> parser = PegParser.of(JsonValue.class, JsonCtors.class, new JsonCtors());  
+    PegParser<JsonValue> parser = PegParser.of(JsonValue.class, CtorCatalog.class, new CtorCatalog());  
 
 
 The catalog instance may be accessed concurrently and should be immutable;
@@ -708,11 +717,23 @@ You may instantiate multiple parsers each with a different catalog instance
 that influence ctors differently.
 
 
-## Ctors as pure functions
+## Implicit Ctors
 
-Ctors should not cause side effects, nor should they depend on side effects.
-The body of a ctor should depend only on its arguments,
-and possible some constant data that remain the same throughout the parsing process.
+If a datatype contains no explicit ctors,
+we can think of it in terms of implicit ctors.
+
+▶ A `sealed` type `S` with subtypes `{Si}`
+has implicit ctors in the form of
+
+        S ci(Si arg){ return arg; }
+
+▶ An `enum` type `E` with values of `{ @Regex(ri) vi }`
+has implicit ctors in the form of
+
+        E ci( @Regex(ri)Void arg ){ return vi; } 
+
+▶ If class `A` has a single public constructor,
+the constructor is the implicit ctor.
 
 
 ## Datatype to Rule
@@ -722,34 +743,14 @@ This often involves other datatypes.
 Given the root datatype, Rekex recursively derives 
 all datatypes and rules for the entire grammar.
 
-Since there are multiple ways the rule for a datatype
-can be expressed, Rekex uses the following procedure
-to derive the rule unambiguously:
+Since Rekex provides multiple ways to define rules,
+we need a precise procedure to determine the rule for any given datatype.
+Rekex finds the ctors for a datatype in one of the following places, in that order
+- explicit ctors in the catalog
+- explicit ctors in the class/interface body of the datatype
+- implicit ctors of the datatype
 
-1. If the ctor catalog contains one or more ctors for the datatype, 
-  the rule is derived from these ctors.
-
-2. If the class/interface of the datatype contains one or more ctors, 
-the rule is derived from these ctors.
-
-3. If the datatype is a `sealed` type, the rule is derived from its subtypes.
-
-4. If the datatype contains a single public constructor,
-  the constructor is the implicit ctor for the datatype.
-
-Note that (3) can be interpreted as a list of implicitly ctors as well; 
-if written explicitly:
-
-        public JsonValue object(JsonObject obj){ return obj; }
-        public JsonValue array(JsonArray arr){ return arr; }
-        ...
-
-Therefore, to derive the rule for a datatype is to find
-the ctors for the datatype, and the ctors are found either
-in the catalog, or within the datatype, 
-or from subtypes, or from the single constructor.  
-
-The [Specification](./Spec.md) defines this procedure more rigorously. 
+The [Specification](./Spec.md) defines this procedure in more details. 
 
 ## Refactor from concrete to abstract
 
@@ -772,6 +773,13 @@ particularly the root datatype,
 contain only the information we need from ASTs.
 
 
+## Ctors as pure functions
+
+Ctors should not cause side effects, nor should they depend on side effects.
+The body of a ctor should depend only on its arguments,
+and possible some constant data that remain the same throughout the parsing process.
+
+
 ## Semantic Predicate
 
 Some times it is difficult or impossible to express a parsing 
@@ -784,7 +792,7 @@ if `a` is a known function name. Unfortunately, if `a` is not a function
 name but a variable name, we are required to interpret 
 `a(b)` as implicit multiplication `a*(b)`.
 This ambiguity cannot be resolved syntactically, 
-if function names and variables names are not fixed.
+if available function names and variables names are unknown to grammar.
 Nor can we match `a(b)` with a more abstract construct
 and delay the interpretation post parsing,
 because `a(b)^c` could represent two different tree structures,
@@ -796,10 +804,10 @@ on the ctor that matches function calls
     record CtorCatalog(Set<String> funcNames) // with config data
     {
         // name '(' arg ')'
-        public FuncCall fc(Name name, PL pl, Expr arg, PR pr) throws NotFuncException
+        public FuncCall fc(Name name, PL pl, Expr arg, PR pr) throws InvalidFuncException
         {
             if(!funcNames.contains(name.text()))
-                throw new NotFuncException(); // semantic predicate failure
+                throw new InvalidFuncException(); // semantic predicate failure
             return new FuncCall(name, arg);
         }
 
@@ -822,10 +830,10 @@ because that would require ctors with side effects.
 
 If a ctor throws an `Exception` that's not explicitly declared,
 it is considered a fatal failure, and the parser stops immediately.
-For example, if there's no alternative interpretation for `a(b)`,
-and `a` must be a function name, the ctor can be written as 
+For example, if we drop the alternative interpretation for `a(b)`,
+then it's mandatory that `a` must be a function name 
 
-        public FuncCall fc(Identifier name, PL pl, Expr arg, PR pr)
+        public FuncCall fc(Name name, PL pl, Expr arg, PR pr) // no throws
         {
             if(!funcNames.contains(name.text()))
                 throw new IllegalArgumentException(); // fatal failure
