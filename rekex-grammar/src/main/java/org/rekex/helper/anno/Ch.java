@@ -20,7 +20,7 @@ import static org.rekex.regexp.RegExpApi.union;
  * if it's in {@link #value()}  or {@link #range()} but not in {@link #except()}.
  */
 
-@Target(ElementType.TYPE_USE)
+@Target({ElementType.TYPE_USE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Ch
 {

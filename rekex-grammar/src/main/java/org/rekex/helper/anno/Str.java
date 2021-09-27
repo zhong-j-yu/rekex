@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
  * Equivalent to a {@link Regex} that matches a string
  * to one of the literal strings in {@link #value()}.
  */
-@Target(ElementType.TYPE_USE)
+@Target({ElementType.TYPE_USE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Str
 {

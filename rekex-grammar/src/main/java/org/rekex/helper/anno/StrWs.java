@@ -26,7 +26,7 @@ import java.util.function.Function;
  * but it also matches following zero or more whitespace characters.
  * Only the matched string literal is the significant input (see {@link Regex#group()}.
  */
-@Target(ElementType.TYPE_USE)
+@Target({ElementType.TYPE_USE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface StrWs
 {

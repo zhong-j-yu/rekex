@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 /**
  * `@Size(n)` is equivalent to {@link SizeLimit @SizeLimit(min=n, max=n)}.
  */
-@Target(ElementType.TYPE_USE)
+@Target({ElementType.TYPE_USE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Size
 {

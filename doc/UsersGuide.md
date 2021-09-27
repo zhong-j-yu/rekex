@@ -13,7 +13,7 @@ Maven dependency:
         <dependency>
             <groupId>org.rekex</groupId>
             <artifactId>rekex-parser</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
         </dependency>
 
 A quick example for a parser that matches strings of 0s and 1s:

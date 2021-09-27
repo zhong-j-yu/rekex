@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 /**
  * The regular expression that the value of a string-like dataype must match.
  */
-@Target(ElementType.TYPE_USE)
+@Target({ElementType.TYPE_USE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Regex
 {
