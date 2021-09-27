@@ -1,5 +1,9 @@
 
-# Rekex - grammar as algebraic datatypes
+# Rekex
+
+## PEG parser generator for Java 17
+
+### grammar as algebraic datatypes
 
 A context-free grammar has the form of
 

@@ -29,29 +29,27 @@ A quick example for a parser that matches strings of 0s and 1s:
         }
 
         PegParser<Binary> parser = PegParser.of(Binary.class);
-        Binary result = parser.matchFull("0101");
-        System.out.println(result.bits().get(3));
+        Binary binary = parser.matchFull("0101");
+        System.out.println(binary.bits().get(3));
 
 
 
 # PART I -- Grammar as Algebraic Datatypes
 
-A PEG grammar can be expressed as a collection of algebraic datatypes,
-*i.e.* `sealed`, `record`, `enum` types.
-A parser can be generated for this grammar, which outputs parse trees
-that are statically-typed in these user-defined datatypes.
+A PEG grammar can be represented by a collection of user-defined algebraic datatypes.
+An input sentence that matches the grammar can be represented by a parse tree with nodes in these datatypes.
 
 ## PEG
 
 [Parsing Expression Grammar](https://en.wikipedia.org/wiki/Parsing_expression_grammar)
 (PEG) is similar to Content-Free Grammar (CFG)
-with two extra features: ordered choice and lookahead. 
+with two extra features: ordered choice, and lookahead. 
 It is easier to use PEG to describe language grammars in many applications.
 
 We'll use the [Json Grammar](https://www.json.org) as the main example in this document.
 The official grammar is a CFG; we'll treat it as a PEG that's trivially equivalent. 
 
-A PEG contains *grammar symbols*, such as `value, object, member`.
+A PEG contains *grammar symbols*, such as `value, object, member` in Json grammar.
 Each symbol is associated with a *grammar rule*.
 Rules can take the following forms:
 - ordered choice: `value ← object / array / ...`
@@ -82,9 +80,6 @@ to represent an in-line rule.
 It's understood that the source grammar is refactored with more symbols introduced
 to maintain the one-to-one correspondence between symbols and datatypes.
 
-All datatypes must be `public`.
-Any Java type can be chosen to represent a symbol, including primitive types.
-
 ## Grammar Rules
 
 Every grammar symbol is associated with exactly one grammar *rule*,
@@ -93,7 +88,7 @@ Correspondingly, every datatype is associated with a grammar rule,
 often in relationship to other datatypes.
 For a quick peek how rules can be represented in Rekex: 
 
-- choice and sequence rules as subtypes and constructors/methods
+- choice and sequence rules as subtypes and constructors
 - repetition rules as `List<E>` or `E[]`
 - lookaheads as `Peek<E>` and `Not<E>`
 - terminal matching with `@Regex` annotations
@@ -564,7 +559,7 @@ the grammar is transliterated into algebraic datatypes;
 the parser produces parse trees from inputs;
 then transformers produce ASTs from parse trees.
 
-However, a programmer may have good reasons to expect a specific kind of AST
+However, a programmer may have good reasons to want a specific kind of AST
 directly out of the parser. Maybe that's the only requirement of the application.
 Maybe that's for removing useless syntactic information from datanodes.
 In any case, we need to integrate AST productions in the parsing process.
@@ -675,9 +670,7 @@ Sometimes we don't want to, or can't, define ctors for a datatype
 within the class body of the datatype. 
 Maybe we want to keep the datatype declaration clean,
 free of syntactic rules.
-Maybe the datatype is from 3rd party that we cannot modify.
-Maybe the datatype doesn't even have a class body,
-such as primitive types and array types.
+Maybe the datatype is from 3rd party which we cannot modify.
 
 Ctors for a datatype can be declared in a central *ctor catalog* instead
 
@@ -696,11 +689,11 @@ Ctors for a datatype can be declared in a central *ctor catalog* instead
 
 *All `public` methods declared in the catalog class are explicit ctors.*
 Do not declare public methods that are not intended as ctors.
-`@Ctor` and `static` are allowed on ctors, but not required.
+Ctors in the catalog can optionally be marked with `@Ctor` and/or `static`.
 
-If a ctor catalog is used to define some ctors,
+If a catalog is used to define some ctors,
 the catalog class must be provided to the parser builder,
-an instance of the catalog must be provided to the constructor of the parser.
+and an instance of the catalog must be provided to the constructor of the parser.
 
     PegParser<JsonValue> parser = new PegParserBuilder()
         .rootType(JsonValue.class)
@@ -719,22 +712,21 @@ that influence ctors differently.
 
 ## Implicit Ctors
 
-If a datatype contains no explicit ctors,
-we can think of it in terms of implicit ctors.
+If a datatype has no explicit ctors,
+it may have implicit ctors:
 
 ▶ A `sealed` type `S` with subtypes `{Si}`
 has implicit ctors in the form of
 
-        S ci(Si arg){ return arg; }
+        S f(Si arg){ return arg; }
 
-▶ An `enum` type `E` with values of `{ @Regex(ri) vi }`
-has implicit ctors in the form of
+▶ A class `R` with a single public constructor `R(A1, ... An)`
+has one implicit ctor
 
-        E ci( @Regex(ri)Void arg ){ return vi; } 
+        R f(A1 a1, ... An an){ return new R(a1, ... an); }
 
-▶ If class `A` has a single public constructor,
-the constructor is the implicit ctor.
-
+Rules for `sealed` and `record` types in *PART I*
+can now be understood in terms of implicit ctors.
 
 ## Datatype to Rule
 
@@ -744,7 +736,7 @@ Given the root datatype, Rekex recursively derives
 all datatypes and rules for the entire grammar.
 
 Since Rekex provides multiple ways to define rules,
-we need a precise procedure to determine the rule for any given datatype.
+Rekex needs a precise procedure to derive the rule for any given datatype.
 Rekex finds the ctors for a datatype in one of the following places, in that order
 - explicit ctors in the catalog
 - explicit ctors in the class/interface body of the datatype
@@ -755,11 +747,12 @@ The [Specification](./Spec.md) defines this procedure in more details.
 ## Refactor from concrete to abstract
 
 It's probably a good idea to design a parser by starting
-with simple algebraic datatypes that directly mirror the grammar.
-Then we can incrementally refactor individual datatypes.
+with simple algebraic datatypes that directly mirror the grammar,
+as in *PART I*.
+Then we can incrementally refactor individual datatypes with explicit ctors.
 For example, we start with `record Member(JsonString,Colon,JsonValue){}`.
 Now we want to discard `Colon` from the datatype.
-We first add an explicit ctor to replace the implicit ctor
+We first add an explicit ctor to override the implicit ctor
 
     public Member member(JsonString name, Colon colon, JsonValue value)
     {
@@ -770,7 +763,7 @@ which is trivial and doesn't do anything useful.
 But then we can safely refactor `Member` without breaking the grammar.
 We can do this progressively until all datatypes,
 particularly the root datatype, 
-contain only the information we need from ASTs.
+contain only the information we need in ASTs.
 
 
 ## Ctors as pure functions

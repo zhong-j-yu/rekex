@@ -14,6 +14,7 @@ Following grammar rules are supported:
 - *Regex Rule*, with a `regex`, a `flags`, a `group` number.
 
 Each rule is also associated with
+- a unique `id`
 - a `datatype` of the value to be produced if the rule applies.
 - an `instantiator` that produces a value if the rule applies.
 
@@ -111,7 +112,7 @@ from following clauses, whichever succeeds first
 9. If the target datatype is `org.rekex.spec.Peek<E>` or `org.rekex.spec.Not<E>`,
    return a *Lookahead/Lookbehind Rule*, with the subrule derived from `E`.
 
-
+10. If none of the above applies, report an error.
 
 A datatype may match more than one clauses, therefore clauses are order to resolve the conflict.
 For example, an `enum` type may match (1), (2), (3), in which case (1) takes precedence.

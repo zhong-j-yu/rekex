@@ -6,21 +6,28 @@ It unifies *grammar definition* and *AST construction*
 in the most natural and intuitive way, 
 leading to the simplest approach to writing parsers.
 
-For a quick demo, consider a production rule *A = B C* in a grammar. 
-In the Rekex model, grammar symbols *A, B, C* are represented by user-defined 
-datatypes `A, B, C`; a production rule like *A = B C* is represented by
-a function that computes `A` from `(B,C)`
+For a quick demo, 
+consider a context-free grammar with a production rule *A = B C*.
+In Rekex, the rule can be represented as 
 
         public A a(B b, C c){ return ...; }
 
+where
+- grammar symbols *A,B,C* are represented by user-defined datatypes `A,B,C`
+- production rule *A = B C* is represented by function type `A <- (B,C)`
+- the function computes an instance of `A` from arguments `(b,c)`
+- grammar rules for *B,C* are defined similarly in more functions  
+
+
 A collection of such datatypes and functions precisely defines a grammar,
 as well as how ASTs are constructed.
-Any context-free grammar can be defined this way,
+It's obvious that 
+any context-free grammar can be defined this way,
 and any type of ASTs can be constructed this way.
 The idea is very powerful yet so simple.
 
 It could get even simpler.
-If the datatype `A` is designed to simply record `(B, C)`,
+If datatype `A` is designed to simply record `(B, C)`,
 the production rule *A = B C* can be implied by the datatype definition itself
 
         record A(B b, C c){}
@@ -43,11 +50,11 @@ A conventional parser generator, such as
 provides a DSL that's tailored for grammar definitions.
 The programmer defines a grammar in this DSL,
 from which a parser is generated that can recognize inputs and produce parse trees.
-That sounds straightforward, and the introductory examples all look tidy and clean.
+That seems straightforward, and the introductory examples all look tidy and clean.
 
-However, in most use cases, we need to produce some type of result
+However, in most parsing applications, we need to produce some kind of result
 for each input,
-other than what the parser can produce automatically from the grammar alone.
+other than what the parser can produce automatically based on the grammar alone.
 There are mainly two ways to do it:
 
 - Actions, written in the target programming language,
@@ -58,7 +65,7 @@ There are mainly two ways to do it:
   A lot of careful plumbing is required to make it work correctly,
   and it's not gonna be pretty.
 
-- The parse tree can be transformed to something else in post-processing. 
+- The parse tree can be transformed to the end result in post-processing. 
   This requires the programmer to handle parse tree nodes,
   which are either weakly-typed, 
   or strongly-typed albeit in parser-generated datatypes
@@ -69,7 +76,7 @@ There are mainly two ways to do it:
 
 Conventional parser generators are grammar-oriented,
 with the primary concern on grammar definition and input parsing,
-treating AST construction as a secondary concern that's glued on the primary.
+leaving AST construction as a secondary concern that's glued on the primary.
 Yet both are equally important to parser writers.
 
 
@@ -96,7 +103,7 @@ and we want to mirror it with datatypes.
 Naturally, every symbol *A* is mirrored by a datatype `A`;
 every phrase that matches symbol *A* is mirrored by a datanode in datatype `A`.
 A phrase is composed of subphrases, 
-and a datanode is constructed from child nodes that mirror the subphrases,
+and a datanode is constructed from child nodes that mirror subphrases,
 
 A datanode does not have to retain all child nodes;
 it can retain just the information that's needed by its parent node.
@@ -118,10 +125,11 @@ There are two major limitations to this model:
   make sense of the entire input as much as possible, 
   even if there are localized syntax errors. 
 
-For most applications, these limitations aren't a problem,
-and the mirror model works very well.
-There is nothing new though, most programmers think and work in this model intuitively.
-However, it's not so simple to practice it in conventional parser generators.
+For most applications, these limitations don't apply,
+and this mirror model works very well.
+There is nothing new here, though, 
+since most programmers think and work in this model intuitively.
+However, it's not very simple to practice it in conventional parser generators.
 We need a new framework that directly supports the mirror model.
 
 
@@ -131,14 +139,14 @@ In Rekex, a grammar is expressed as a collection of Java datatypes and methods,
 in a way that it's straightforward to translate between the two in either directions.
 
 Non-terminal symbols in the grammar are represented by datatypes in Java,
-in one-to-one correspondence.
+in *one-to-one* correspondence.
 There are *token datatypes* and *special datatypes* which will be explained later;
 the rest are *composite datatypes*.
 
 A composite datatype represents a symbol that has one or more production rules
 (that is, a symbol on the left-hand-side of some production rules).
 Correspondingly, a composite datatype has one or more ctors.
-A **ctor** is a method where the signature represents a production rule, 
+A ***ctor*** is a method where the signature represents a production rule, 
 and the body instantiates a datanode when the rule matches.
 For example,
 
@@ -160,7 +168,8 @@ as long as it's associated with one or more ctors.
 Given the *root datatype* that represents the *start symbol* of a grammar,
 Rekex recursively discovers all datatypes and ctors for the entire grammar.
 A parser is then generated for this grammar, 
-which outputs ASTs in the root datatype.
+which constructs datanodes by invoking the ctors, 
+eventually outputing ASTs in the root datatype.
 
 It is fair to say that there's unprecedented simplicity, clarity,
 and elegance in this approach.
@@ -183,10 +192,10 @@ can be expressed in ctors like
 
 These ctors can be omitted. If there's no explicit ctors for a datatype `A`,
 and `A` is a *sealed* type with subtypes `A1, A2`,
-ctors like these are implicit declared for `A`.
+such ctors are implicitly declared for `A`.
 
 Next, suppose symbol *A1* has a single production rule *A1 = X Y*,
-and datatype `A1` is designed with the same form 
+and datatype `A1` is designed in the same form 
 
         record A1(X x, Y y){}
 
@@ -203,7 +212,7 @@ and production rules in `record` types.
 
 ### Grammar as algebraic datatypes
 
-With such implicit ctors, a context-free grammar can be
+With implicit ctors, a context-free grammar can be
 expressed entirely in `sealed` and `record` types,
 i.e. *algebraic datatypes*,
 which is not surprising since both formalisms have the same forms.
@@ -219,7 +228,7 @@ That could be the sole responsibility assigned to the parser
 while other works are assigned to post-processing,
 which are easy to do because the parse tree is statically-typed
 in user-defined algebraic datatypes.
-Different kinds of ASTs can be produced by different transformers.
+Different kinds of ASTs can be produced by different transformers on the parse tree.
 
 If we do want a specific kind of "abstract" syntax trees directly out of the parser,
 we need to refactor some datatypes,
@@ -251,16 +260,16 @@ for example, `Opt<E>` for *E?* , `Either<A,B>` for *(A | B)* ,
 and `SepBy<T,S>` for *(T (S T)\*)?* .
 Rekex ships with some commonly used generic datatypes;
 users can easily define their own.
-They are crucial for expressing grammar rules succinctly; for example
+They are crucial to succinctly expressing grammar rules; for example
 
         public Integer integer(Opt<Sign> sign, OneOrMore<Digit> digits){ ... }
 
 ### PEG support
 
-The general ideas explored so far can be applied to any grammar
+The general idea explained above can be applied to any grammar
 that is mostly "context free".
-To support PEG, 
-[Parser Expression Grammar](https://en.wikipedia.org/wiki/Parsing_expression_grammar),
+To support PEG 
+([Parser Expression Grammar](https://en.wikipedia.org/wiki/Parsing_expression_grammar)),
 two more concerns need to be addressed:
 - *order among ctors*, which by default is in their declaration order    
 - *syntactic predicates*, which are represented by special datatypes
@@ -287,6 +296,13 @@ For example,
 `@Regex("[0-9]+")String` matches one or more digit chars;
 `@Ch(",")char` matches a comma.
 
+### Summary
+
+In Rekex, grammar symbols are represented by datatypes;
+grammar rules are represented either implicitly by the datatypes themselves,
+or explicitly by ctor methods;
+AST nodes are constructed by invoking constructors/ctors of datatypes.
+  
 
 ## Rekex vs other approaches
 
@@ -301,12 +317,12 @@ However, the static-typing is derivative from grammar DSL
 therefore not very good for refactoring.
 Both the Listener interface and the Visitor interface provided by ANTLR 
 require some amount of scaffolding code from users.
-Most unfortunately the Visitor interface
+Most unfortunately, the Visitor interface
 does not allow different result types for different parse tree nodes,
 making it very awkward to use to transform parse trees.
 
-Direct left-recursive rules are supported in ANTLR 4 as a major feature.
-It is questionable though whether a left-recursive definition is really
+Direct left-recursive rules are supported in ANTLR 4.
+However, it is questionable whether a left-recursive definition is really
 more *natural* than a layered, flattened definition. 
 Most people probably would think of `x+y+z` as a sum of `(x,y,z)`,
 not as a binary tree of `((x+y)+z)`.
@@ -324,9 +340,9 @@ not as a binary tree of `((x+y)+z)`.
 
 [Parboiled for Java](https://github.com/sirthias/parboiled/wiki/Working-with-the-Value-Stack) 
 is a conventional parser generator in the sense that
-grammars are defined in a DSL;
+there is a DSL for grammar definition;
 AST constructions are done either by transforming weakly-typed parse trees,
-or by imperative actions on mutable value stacks and action variables.
+or by imperative embedded actions operating on mutable value stacks and action variables.
 Parboiled for Java requires a lot of bytecode level magics which stop working 
 in newer versions of Java; 
 apparently there aren't enough maintenance resources to fix the problems yet.
@@ -336,8 +352,9 @@ takes advantage of Scala's language features
 to make rule definitions and AST constructions more succinct and statically-typed.
 The application code is *short*, but not necessarily *simple*, 
 which Scala programmers don't seem to have a problem with. 
-The code appears to be functional at first glance,
-but to understand the code requires understanding its imperative operation model. 
+The application code appears to be functional at first glance,
+but is actually imperative in nature;
+programmers must be keenly aware of side effects caused by every rules. 
 
 
 ### Recursive Descent
@@ -349,14 +366,14 @@ at least in the beginning. You have full control and knowledge of
 what's happening at any moment of time. 
 It is easy to write because you just apply the same code patterns repeatedly.
 Eventually the repetition may become tedious,
-and a declarative way to achieve the same goal becomes more appealing.
+and a declarative way to implement it becomes more appealing.
 
 
 ### Parser Combinators
 
 In the 
 [parser combinator](https://en.wikipedia.org/wiki/Parser_combinator)
-approach, grammar rules are mirrored by parser *functions*,
+approach, grammar *rules* are mirrored by parser *functions*,
 and functions can be composed from other functions. For example,
 a production rule *A = B C* may be mirrored by
 
@@ -369,7 +386,7 @@ there are Java ports like
 [funcj.parser](https://github.com/typemeta/funcj/tree/master/parser).
 
 It's possible to write a parser function with arbitrary logic;
-this power also means the functions are opaque,
+this power also means that the functions are opaque,
 making it generally impossible to extract a grammar to be analyzed.
 Parser combinators run in a fixed execution model
 which can't be replaced by an alternative parsing algorithm.
