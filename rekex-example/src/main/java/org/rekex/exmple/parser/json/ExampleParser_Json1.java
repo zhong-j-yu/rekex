@@ -151,8 +151,10 @@ public interface ExampleParser_Json1
         return PegParser.of(Input.class);
     }
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
+        ExampleParserUtil.genJava(ExampleParser_Json1.class, Input.class, null);
+
         ExampleParserUtil.testInputs("Json1", parser(), input->input.value);
     }
 

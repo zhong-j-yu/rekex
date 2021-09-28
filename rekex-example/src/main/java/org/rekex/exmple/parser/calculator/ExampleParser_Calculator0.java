@@ -84,6 +84,8 @@ public interface ExampleParser_Calculator0
 
     public static void main(String[] args) throws Exception
     {
+        ExampleParserUtil.genJava(ExampleParser_Calculator0.class, Exp0.class, null);
+        
         ExampleParserUtil.testInputs("Calculator0", parser(), eval());
     }
 

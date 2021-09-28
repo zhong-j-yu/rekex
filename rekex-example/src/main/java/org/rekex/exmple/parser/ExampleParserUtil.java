@@ -1,8 +1,15 @@
 package org.rekex.exmple.parser;
 
+import org.rekex.annotype.AnnoType;
+import org.rekex.annotype.ClassType;
+import org.rekex.exmple.parser.calculator.ExampleParser_Calculator0;
+import org.rekex.exmple.parser.calculator.ExampleParser_Calculator1;
+import org.rekex.exmple.parser.json.ExampleParser_Json1;
 import org.rekex.parser.ParseResult;
 import org.rekex.parser.PegParser;
+import org.rekex.parser.PegParserBuilder;
 
+import java.nio.file.Paths;
 import java.util.Scanner;
 import java.util.function.Function;
 
@@ -37,6 +44,26 @@ public class ExampleParserUtil
                     fatal.cause().printStackTrace();
             }
         }
+    }
+
+    public static void genJava(Class<?> exampleClass, Class<?> rootType, Class<?> catalogClass) throws Exception
+    {
+        genJava(exampleClass, ClassType.of(rootType), catalogClass);
+    }
+
+    public static void genJava(Class<?> exampleClass, AnnoType rootType, Class<?> catalogClass) throws Exception
+    {
+        // this works if the main method is invoked from IntelliJ IDE
+        var srcDir = Paths.get("./rekex-example/src/main/java");
+
+        new PegParserBuilder()
+            .rootType(rootType)
+            .catalogClass(catalogClass)
+            .packageName(exampleClass.getPackageName())
+            .className("Generated_"+exampleClass.getSimpleName())
+            .outDirForJava(srcDir)
+            .logger(System.out::println)
+            .generateJavaFile();
     }
 
 }
