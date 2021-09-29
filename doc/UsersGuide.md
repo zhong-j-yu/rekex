@@ -13,8 +13,12 @@ Maven dependency:
         <dependency>
             <groupId>org.rekex</groupId>
             <artifactId>rekex-parser</artifactId>
-            <version>1.1.1</version>
+            <version>1.2.0</version>
         </dependency>
+
+If your application is modularized with 
+[Java modules](https://www.oracle.com/corporate/features/understanding-java-9-modules.html),
+read [this document](./JavaModules.md).
 
 A quick example for a parser that matches strings of 0s and 1s:
 

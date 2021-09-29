@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 class PkgUtil
 {
@@ -69,6 +70,51 @@ class PkgUtil
         // it's not null. we tested in constructor.
 
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+
+        // modules ....
+        //
+        // if user app is unmodularized, everything is on the classpath, no problem.
+        // apparently, JavaCompiler checks system property "java.class.path"
+        // and use it for StandardLocation.CLASS_PATH
+        //
+        // however, if user app is modularized,
+        // user modules and rekex modules are on the module-path, not classpath,
+        // apparently, JavaCompiler does not inherit jdk.module.path
+        // we have to explicitly add them.
+        //
+        // `javaFiles` are compiled into an unnamed module.
+        //   (is that correct? does Javac checks dir hierarchy for module-info.java?)
+        // they will reference user modules, and rekex modules.
+        //
+        // In the end, this method may not work at all. For example, the JVM was launched
+        // with minimal classpath/module-path; some code then dynamically create a ClassLoader
+        // to launch a sub-app, which reaches this method. The system properties don't
+        // contain necessary classpath/module-path for the sub-app.
+        // User might have to manually add a lot of stuff in `options` to make it work.
+        //
+        // If nothing works, ParserBuilder can't directly compile the files then load the classes.
+        // user will have to be content with compiling `javaFiles` in a separate build step;
+
+        if(!options.contains("--add-modules"))
+        {
+            options = new ArrayList<>(options);
+            options.add("--add-modules");
+            options.add("ALL-MODULE-PATH");
+        }
+
+
+        {
+            var path0 = System.getProperty("jdk.module.path");
+            var path1 = fileManager.getLocation(StandardLocation.MODULE_PATH);
+            if(path1==null && path0!=null)
+            {
+                String[] arr = path0.split(Pattern.quote(File.pathSeparator));
+                ArrayList<File> files = new ArrayList<>();
+                for(String s : arr)
+                    files.add(new File(s));
+                fileManager.setLocation(StandardLocation.MODULE_PATH, files);
+            }
+        }
 
         Files.createDirectories(outDir);
         fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Collections.singleton(outDirF)); // must be one dir

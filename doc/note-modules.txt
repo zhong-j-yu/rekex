@@ -27,6 +27,8 @@ rekex-example
     examples of rekex-regexp
     examples of rekex-parser
 
+rekex-example-modular
+    examples of modularized user app
 
 ## comments ------
 
@@ -38,3 +40,13 @@ Types in `helper` don't require special handling by grammar and parser builders;
   Also, it's possible that in future versions grammar and parser builders
   do optimize for those helper types with special handlings.
 
+## java module
+
+Rekex modules are also organized as Java modules.
+This is no problem at all for user apps that are not modularized;
+Rekex modules are simply jars on the classpath.
+
+For user apps that are modularized, they'll need to depend on
+rekex modules, and open to rekex modules for reflection.
+It's easy if user module is simply "open".
+Otherwise it's a lot of trouble.
