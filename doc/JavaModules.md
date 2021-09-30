@@ -37,3 +37,4 @@ about modules.
 You may also just invoke `PegParserBuilder.generateJavaFile()`
 to put the `.java` file on your source directory,
 then compile it in a separate build step.
+
