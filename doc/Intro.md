@@ -417,5 +417,4 @@ most parser applications;
 hopefully it'll become widely adopted in the years to come. 
 
 ----
-*Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a job; helps appreciated.*
+*Create by [Zhong Yu](http://zhong-j-yu.github.io)*

@@ -173,5 +173,5 @@ In summary, given a datatype, Rekex tries to
 - https://docs.oracle.com/javase/specs/jls/se16/html/jls-4.html#jls-4.10
 
 ----
-*Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a job; helps appreciated.*
+*Create by [Zhong Yu](http://zhong-j-yu.github.io)*
+

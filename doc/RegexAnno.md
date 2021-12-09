@@ -100,5 +100,5 @@ convertible to `@StrWs` with a default `wsChars`
         }
 
 ----
-*Create by [Zhong Yu](http://zhong-j-yu.github.io).
-I am looking for a job; helps appreciated.*
+*Create by [Zhong Yu](http://zhong-j-yu.github.io)*
+
